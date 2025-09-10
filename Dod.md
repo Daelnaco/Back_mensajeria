@@ -1,17 +1,17 @@
-# ✅ Definition of Done (DoD) - Proyecto
+#  Definition of Done (DoD) - Proyecto
 
 Este documento define los criterios mínimos que debe cumplir **cada historia de usuario** y **cada entrega** para considerarse completada.
 
 ---
 
-## 📌 Planificación
+##  Planificación
 - [ ] Los sprints están definidos en GitHub Projects.
 - [ ] Cada historia tiene un responsable asignado.
 - [ ] La planificación cubre todo el semestre.
 
 ---
 
-## 📌 Historias de Usuario
+##  Historias de Usuario
 Cada historia debe incluir:
 - [ ] Descripción clara de la funcionalidad.
 - [ ] Criterios de aceptación objetivos.
@@ -20,17 +20,17 @@ Cada historia debe incluir:
 
 ---
 
-## 📌 Estimación y Riesgo
+##  Estimación y Riesgo
 - [ ] Cada historia tiene categoría de tamaño (`S`, `M`, `L`, `XL`).
 - [ ] Cada historia tiene un tag de riesgo (`alto`, `medio`, `bajo`).
 
 ---
 
-## 📌 Gestión y Verificación
+##  Gestión y Verificación
 - [ ] Todos los aportes del equipo están integrados.
 - [ ] La entrega es puntual en el aula virtual.
 - [ ] Los medios de verificación (capturas, video, demo o enlaces) están publicados en GitHub.
 
 ---
 
-⚠️ **Nota:** Ninguna historia o funcionalidad puede moverse a "Done" sin cumplir TODOS los criterios anteriores.
+**Nota:** Ninguna historia o funcionalidad puede moverse a "Done" sin cumplir TODOS los criterios anteriores.
