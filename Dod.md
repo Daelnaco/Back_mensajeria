@@ -5,24 +5,22 @@ Este documento define los criterios mínimos que debe cumplir **cada historia de
 ---
 
 ##  Planificación
-- [ ] Los sprints están definidos en GitHub Projects.
-- [ ] Cada historia tiene un responsable asignado.
-- [ ] La planificación cubre todo el semestre.
+- [X] Los sprints están definidos en GitHub Projects.
+- [X] Cada historia tiene un responsable asignado.
+- [X] La planificación cubre todo el semestre.
 
 ---
 
 ##  Historias de Usuario
 Cada historia debe incluir:
-- [ ] Descripción clara de la funcionalidad.
-- [ ] Criterios de aceptación objetivos.
+- [X] Descripción clara de la funcionalidad.
+- [X] Criterios de aceptación objetivos.
 - [ ] Definition of Done (DoD) asociado.
-- [ ] Política de seguridad (autorización, si aplica).
-
 ---
 
 ##  Estimación y Riesgo
-- [ ] Cada historia tiene categoría de tamaño (`S`, `M`, `L`, `XL`).
-- [ ] Cada historia tiene un tag de riesgo (`alto`, `medio`, `bajo`).
+- [X] Cada historia tiene categoría de tamaño (`S`, `M`, `L`, `XL`).
+- [X] Cada historia tiene un tag de riesgo (`alto`, `medio`, `bajo`).
 
 ---
 
