@@ -1,0 +1,35 @@
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+PARA INICIAR
+Primero tener corriendo mongo en el sistema *** Desde CMD ***
+	net start MongoDB
+luego *** Desde VSC *** estando en la ruta raíz del proyecto
+	pnpm run start:dev
+--------------------------------------------------------------------------	
+--------------------------------------------------------------------------
+Lo que se hizo con respecto al CheckList 2 del back
+
+
+HU-01: Iniciar disputa
+	Creamos el módulo disputes con entidades Dispute y DisputeEvent (TypeORM / MySQL).
+	Endpoint POST /api/disputes: valida pertenencia (placeholder a Órdenes/Publicaciones), evita duplicados abiertos, crea la disputa en estado ABIERTO y registra auditoría básica (IP/User-Agent via controller).
+	Registra un evento CREATED en el historial (DisputeEvent) y actualiza timestamps.
+
+HU-02: Responder disputa
+	Endpoint POST /api/disputes/:id/reply.
+	Reglas: solo miembros (comprador/vendedor) o admin; la disputa debe estar en ABIERTO/EN_REVISION.
+	Persiste un DisputeEvent tipo REPLIED (mensaje + adjuntos) y actualiza última actividad (UpdateDateColumn).
+
+HU-03: Mensajería en conversación
+	Creamos módulo conversations con Conversation y ConversationMessage.
+	Endpoint POST /api/conversations/:id/messages: soporta type: text|image, valida pertenencia a la conversación, persiste mensaje y deja status: 'sent'.
+	Endpoint GET /api/conversations/:id/messages?cursor=...&limit=...: paginación por cursor (fecha), orden ASC.
+	Actualizamos actualizadoEn de la conversación al recibir mensaje.
+
+HU-04: Adjuntar imágenes en chat
+	Creamos módulo attachments con entidad Attachment.
+	Endpoint POST /api/attachments/upload con multer y almacenamiento local en ./uploads:
+	Valida MIME (jpeg/png/webp) y tamaño (≤5 MB),
+	“Escaneo” simulado anti-malware (hook listo para integrar),
+	Guarda metadatos (ruta, mime, size); dejamos listo para vincular a mensajes.
+	Resolvimos issues de ESM/CommonJS usando crypto.randomUUID en vez de uuid ESM.
