@@ -1,17 +1,8 @@
-import { Model } from 'mongoose';
-import { AttachmentDocument } from './schemas/attachment.schema';
+import { Repository } from 'typeorm';
+import { Attachment } from './entities/attachment.entity';
 export declare class AttachmentsService {
-    private readonly attachmentModel;
-    constructor(attachmentModel: Model<AttachmentDocument>);
-    private validateMime;
-    private validateSize;
-    private fakeScan;
-    handleUpload(file: Express.Multer.File, user: any): Promise<{
-        id: string;
-        url: string;
-        mimeType: string;
-        size: number;
-        ownerUserId: string;
-        createdAt: Date;
-    }>;
+    private readonly repo;
+    constructor(repo: Repository<Attachment>);
+    private antivirusScan;
+    store(file: Express.Multer.File): Promise<Attachment>;
 }

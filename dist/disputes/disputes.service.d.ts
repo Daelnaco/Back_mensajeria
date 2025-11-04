@@ -1,23 +1,17 @@
-import { Model } from 'mongoose';
-import { Dispute, DisputeDocument } from './schemas/dispute.schema';
-import { DisputeEventDocument } from './schemas/dispute-event.schema';
+import { Repository } from 'typeorm';
+import { Dispute } from './entities/dispute.entity';
+import { DisputeEvent } from './entities/dispute-event.entity';
 import { CreateDisputeDto } from './dto/create-dispute.dto';
 import { ReplyDisputeDto } from './dto/reply-dispute.dto';
 export declare class DisputesService {
-    private readonly disputeModel;
-    private readonly disputeEventModel;
-    constructor(disputeModel: Model<DisputeDocument>, disputeEventModel: Model<DisputeEventDocument>);
-    openDispute(dto: CreateDisputeDto, user: any, ip: string, userAgent: string): Promise<import("mongoose").Document<unknown, {}, DisputeDocument, {}, {}> & Dispute & import("mongoose").Document<unknown, any, any, Record<string, any>, {}> & Required<{
-        _id: unknown;
-    }> & {
-        __v: number;
-    }>;
-    findAllByUser(userId: string): Promise<(import("mongoose").Document<unknown, {}, DisputeDocument, {}, {}> & Dispute & import("mongoose").Document<unknown, any, any, Record<string, any>, {}> & Required<{
-        _id: unknown;
-    }> & {
-        __v: number;
-    })[]>;
-    replyToDispute(disputeId: string, dto: ReplyDisputeDto, user: any): Promise<{
+    private readonly disputes;
+    private readonly events;
+    constructor(disputes: Repository<Dispute>, events: Repository<DisputeEvent>);
+    private validateOwnershipOrThrow;
+    private ensureNotDuplicateOpen;
+    create(dto: CreateDisputeDto, user: any, ip?: string, ua?: string): Promise<Dispute>;
+    private assertCanReplyOrThrow;
+    reply(disputeId: number, dto: ReplyDisputeDto, user: any): Promise<{
         ok: boolean;
     }>;
 }

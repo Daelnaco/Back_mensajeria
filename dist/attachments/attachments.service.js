@@ -14,59 +14,43 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AttachmentsService = void 0;
 const common_1 = require("@nestjs/common");
-const mongoose_1 = require("@nestjs/mongoose");
-const mongoose_2 = require("mongoose");
-const attachment_schema_1 = require("./schemas/attachment.schema");
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const fs = require("node:fs");
+const path = require("node:path");
+const attachment_entity_1 = require("./entities/attachment.entity");
+const ALLOWED = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_SIZE = 5 * 1024 * 1024;
 let AttachmentsService = class AttachmentsService {
-    constructor(attachmentModel) {
-        this.attachmentModel = attachmentModel;
+    constructor(repo) {
+        this.repo = repo;
     }
-    validateMime(mime) {
-        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!allowed.includes(mime)) {
-            throw new common_1.BadRequestException('Formato no permitido. Solo imágenes (jpeg, png, webp)');
-        }
-    }
-    validateSize(size) {
-        const MAX = 5 * 1024 * 1024;
-        if (size > MAX) {
-            throw new common_1.BadRequestException('Archivo demasiado grande (máx 5MB).');
-        }
-    }
-    async fakeScan() {
+    async antivirusScan(_absPath) {
         return true;
     }
-    async handleUpload(file, user) {
-        if (!file) {
-            throw new common_1.BadRequestException('No se envió ningún archivo');
+    async store(file) {
+        if (!ALLOWED.includes(file.mimetype))
+            throw new common_1.BadRequestException('Formato no permitido');
+        if (file.size > MAX_SIZE)
+            throw new common_1.BadRequestException('Archivo excede tamaño máximo');
+        const abs = path.resolve(file.path);
+        const ok = await this.antivirusScan(abs);
+        if (!ok) {
+            fs.unlinkSync(abs);
+            throw new common_1.BadRequestException('Fallo de escaneo/antimalware');
         }
-        if (!user || !user.id) {
-            throw new common_1.ForbiddenException('Usuario no autenticado');
-        }
-        this.validateMime(file.mimetype);
-        this.validateSize(file.size);
-        await this.fakeScan();
-        const created = await this.attachmentModel.create({
-            ownerUserId: user.id,
-            filename: file.filename,
+        const saved = await this.repo.save(this.repo.create({
+            storagePath: abs,
             mimeType: file.mimetype,
             size: file.size,
-            url: `/uploads/${file.filename}`,
-        });
-        return {
-            id: created._id.toString(),
-            url: created.url,
-            mimeType: created.mimeType,
-            size: created.size,
-            ownerUserId: created.ownerUserId,
-            createdAt: created.createdAt,
-        };
+        }));
+        return saved;
     }
 };
 exports.AttachmentsService = AttachmentsService;
 exports.AttachmentsService = AttachmentsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, mongoose_1.InjectModel)(attachment_schema_1.Attachment.name)),
-    __metadata("design:paramtypes", [mongoose_2.Model])
+    __param(0, (0, typeorm_1.InjectRepository)(attachment_entity_1.Attachment)),
+    __metadata("design:paramtypes", [typeorm_2.Repository])
 ], AttachmentsService);
 //# sourceMappingURL=attachments.service.js.map

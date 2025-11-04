@@ -17,31 +17,31 @@ exports.Message = Message;
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", String)
-], Message.prototype, "orderId", void 0);
+], Message.prototype, "content", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", String)
-], Message.prototype, "senderUserId", void 0);
+], Message.prototype, "userId", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ required: true, enum: ['text', 'image'] }),
-    __metadata("design:type", String)
-], Message.prototype, "type", void 0);
+    (0, mongoose_1.Prop)({ default: true }),
+    __metadata("design:type", Boolean)
+], Message.prototype, "isVisible", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: false }),
+    __metadata("design:type", Boolean)
+], Message.prototype, "isFlagged", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: false }),
+    __metadata("design:type", Boolean)
+], Message.prototype, "isDeleted", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: false }),
     __metadata("design:type", String)
-], Message.prototype, "body", void 0);
+], Message.prototype, "orderId", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ type: [String], default: [] }),
-    __metadata("design:type", Array)
-], Message.prototype, "attachments", void 0);
-__decorate([
-    (0, mongoose_1.Prop)({
-        required: true,
-        enum: ['sent', 'delivered', 'read'],
-        default: 'sent',
-    }),
+    (0, mongoose_1.Prop)({ required: false }),
     __metadata("design:type", String)
-], Message.prototype, "status", void 0);
+], Message.prototype, "postId", void 0);
 exports.Message = Message = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], Message);

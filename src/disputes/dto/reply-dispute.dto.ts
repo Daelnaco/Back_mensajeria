@@ -1,23 +1,11 @@
-import { IsString, IsOptional, IsArray } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
 
 export class ReplyDisputeDto {
-  @ApiProperty({
-    description: 'Mensaje de respuesta del usuario',
-    example: 'Adjunto más evidencia del daño',
-    required: false,
-  })
-  @IsOptional()
   @IsString()
-  message?: string;
+  @MinLength(1)
+  @MaxLength(5000)
+  mensaje: string;
 
-  @ApiProperty({
-    description: 'Adjuntos adicionales (URLs)',
-    example: ['https://ruta/foto-extra.jpg'],
-    required: false,
-  })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  attachments?: string[];
+  adjuntos?: string[];
 }

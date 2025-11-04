@@ -14,16 +14,16 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
-const swagger_1 = require("@nestjs/swagger");
 const users_service_1 = require("./users.service");
 const create_user_dto_1 = require("./schemas/dto/create-user.dto");
 const update_user_dto_1 = require("./schemas/dto/update-user.dto");
+const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
 let UsersController = class UsersController {
     constructor(usersService) {
         this.usersService = usersService;
     }
-    create(dto) {
-        return this.usersService.create(dto);
+    create(createUserDto) {
+        return this.usersService.create(createUserDto);
     }
     findAll() {
         return this.usersService.findAll();
@@ -31,8 +31,8 @@ let UsersController = class UsersController {
     findOne(id) {
         return this.usersService.findOne(id);
     }
-    update(id, updateDto) {
-        return this.usersService.update(id, updateDto);
+    update(id, updateUserDto) {
+        return this.usersService.update(id, updateUserDto);
     }
     remove(id) {
         return this.usersService.remove(id);
@@ -41,52 +41,29 @@ let UsersController = class UsersController {
 exports.UsersController = UsersController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Crear usuario (Squad 4)',
-        description: 'Crea un usuario y su perfil/rol. ' +
-            'Este módulo pertenece al Squad 4 (Auth y Perfiles). ' +
-            'Los demás squads consumen estos usuarios como participantes válidos de disputas y conversaciones.',
-    }),
-    (0, swagger_1.ApiCreatedResponse)({ description: 'Usuario creado correctamente.' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_user_dto_1.CreateUserDto]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "create", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Listar usuarios (Squad 4)',
-        description: 'Lista todos los usuarios registrados. ' +
-            'Esta información se usa a nivel de otros módulos para auditar actores en las disputas, mensajes, etc. ' +
-            'Implementación y mantenimiento: Squad 4.',
-    }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Lista de usuarios.' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "findAll", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)(':id'),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Obtener datos de usuario por ID',
-        description: 'Devuelve los datos de un usuario específico. ' +
-            'Esto cumple la necesidad de integración: "Equipo 9 requiere: datos de usuario por id". ' +
-            'La fuente oficial de este dato es el Squad 4 (Auth y Perfiles).',
-    }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Usuario encontrado.' }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "findOne", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Patch)(':id'),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Actualizar perfil de usuario (Squad 4)',
-        description: 'Actualiza datos del usuario. Mantenido por Squad 4. Otros squads sólo consumen esta información.',
-    }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Usuario actualizado.' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -94,19 +71,14 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "update", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Delete)(':id'),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Eliminar usuario (Squad 4)',
-        description: 'Elimina un usuario. Este endpoint es de responsabilidad del Squad 4.',
-    }),
-    (0, swagger_1.ApiNoContentResponse)({ description: 'Usuario eliminado.' }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "remove", null);
 exports.UsersController = UsersController = __decorate([
-    (0, swagger_1.ApiTags)('Users (Squad 4 - Auth y Perfiles)'),
     (0, common_1.Controller)('users'),
     __metadata("design:paramtypes", [users_service_1.UsersService])
 ], UsersController);

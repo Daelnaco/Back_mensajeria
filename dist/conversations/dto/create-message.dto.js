@@ -9,59 +9,31 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ConversationCreateMessageDto = void 0;
+exports.CreateConversationMessageDto = void 0;
 const class_validator_1 = require("class-validator");
-const swagger_1 = require("@nestjs/swagger");
-class ConversationCreateMessageDto {
+class CreateConversationMessageDto {
 }
-exports.ConversationCreateMessageDto = ConversationCreateMessageDto;
+exports.CreateConversationMessageDto = CreateConversationMessageDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'ID de la orden asociada a la conversación',
-        example: 'ORD-12345',
-    }),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], ConversationCreateMessageDto.prototype, "orderId", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Tipo de mensaje',
-        example: 'text',
-        enum: ['text', 'image'],
-    }),
-    (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsIn)(['text', 'image']),
     __metadata("design:type", String)
-], ConversationCreateMessageDto.prototype, "type", void 0);
+], CreateConversationMessageDto.prototype, "type", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Contenido del mensaje si es de tipo texto, o caption si es imagen',
-        example: 'Hola, ¿puedes confirmar el estado del envío?',
-        required: false,
-    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(5000),
     __metadata("design:type", String)
-], ConversationCreateMessageDto.prototype, "body", void 0);
+], CreateConversationMessageDto.prototype, "body", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Adjuntos (URLs de imágenes u otros archivos)',
-        example: ['https://uploads.example.com/evidencia1.jpg'],
-        required: false,
-    }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsString)({ each: true }),
-    __metadata("design:type", Array)
-], ConversationCreateMessageDto.prototype, "attachments", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'ID del otro participante en la conversación (por ejemplo vendedor si yo soy comprador)',
-        example: 'USER456',
-    }),
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.MaxLength)(500),
     __metadata("design:type", String)
-], ConversationCreateMessageDto.prototype, "otherUserId", void 0);
+], CreateConversationMessageDto.prototype, "imageUrl", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(300),
+    __metadata("design:type", String)
+], CreateConversationMessageDto.prototype, "imageCaption", void 0);
 //# sourceMappingURL=create-message.dto.js.map

@@ -17,74 +17,40 @@ const common_1 = require("@nestjs/common");
 const conversations_service_1 = require("./conversations.service");
 const create_message_dto_1 = require("./dto/create-message.dto");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
-const swagger_1 = require("@nestjs/swagger");
 let ConversationsController = class ConversationsController {
-    constructor(conversationsService) {
-        this.conversationsService = conversationsService;
+    constructor(svc) {
+        this.svc = svc;
     }
-    async startConversationAndSend(dto, req) {
-        return this.conversationsService.sendMessageInConversation(dto, req.user);
+    postMessage(id, dto) {
+        const user = global.__req_user;
+        return this.svc.postMessage(Number(id), dto, user);
     }
-    async myConversations(req) {
-        return this.conversationsService.listMyConversations(req.user.id);
-    }
-    async getByOrder(orderId, req) {
-        return this.conversationsService.getConversationByOrder(orderId, req.user.id);
+    list(id, cursor, limit) {
+        const user = global.__req_user;
+        return this.svc.listMessages(Number(id), user, cursor, limit ? Number(limit) : undefined);
     }
 };
 exports.ConversationsController = ConversationsController;
 __decorate([
-    (0, common_1.Post)('start'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Iniciar conversación (o reutilizar) y enviar mensaje inicial',
-        description: 'Crea la conversación entre el usuario actual y otherUserId para una orden dada, ' +
-            'o reutiliza la existente si ya existe, y guarda el mensaje.',
-    }),
-    (0, swagger_1.ApiBody)({ type: create_message_dto_1.ConversationCreateMessageDto }),
-    (0, swagger_1.ApiCreatedResponse)({ description: 'Mensaje enviado en la conversación' }),
-    (0, swagger_1.ApiForbiddenResponse)({
-        description: 'El usuario no tiene permiso para iniciar conversación',
-    }),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Req)()),
+    (0, common_1.Post)(':id/messages'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_message_dto_1.ConversationCreateMessageDto, Object]),
-    __metadata("design:returntype", Promise)
-], ConversationsController.prototype, "startConversationAndSend", null);
+    __metadata("design:paramtypes", [String, create_message_dto_1.CreateConversationMessageDto]),
+    __metadata("design:returntype", void 0)
+], ConversationsController.prototype, "postMessage", null);
 __decorate([
-    (0, common_1.Get)('mine'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Listar mis conversaciones',
-        description: 'Devuelve las conversaciones en las que participa el usuario autenticado, ' +
-            'ordenadas por última actividad.',
-    }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Conversaciones obtenidas' }),
-    __param(0, (0, common_1.Req)()),
+    (0, common_1.Get)(':id/messages'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Query)('cursor')),
+    __param(2, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
-], ConversationsController.prototype, "myConversations", null);
-__decorate([
-    (0, common_1.Get)('by-order/:orderId'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Obtener conversación por orderId',
-        description: 'Devuelve la conversación asociada a esa orden si el usuario participa.',
-    }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Conversación encontrada' }),
-    (0, swagger_1.ApiNotFoundResponse)({ description: 'No existe conversación para esta orden' }),
-    __param(0, (0, common_1.Param)('orderId')),
-    __param(1, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", Promise)
-], ConversationsController.prototype, "getByOrder", null);
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", void 0)
+], ConversationsController.prototype, "list", null);
 exports.ConversationsController = ConversationsController = __decorate([
-    (0, swagger_1.ApiTags)('Conversaciones'),
-    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('conversations'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [conversations_service_1.ConversationsService])
 ], ConversationsController);
 //# sourceMappingURL=conversations.controller.js.map

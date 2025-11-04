@@ -10,6 +10,7 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const mongoose_1 = require("@nestjs/mongoose");
+const typeorm_1 = require("@nestjs/typeorm");
 const auth_module_1 = require("./auth/auth.module");
 const users_module_1 = require("./users/users.module");
 const messages_module_1 = require("./messages/messages.module");
@@ -27,6 +28,19 @@ exports.AppModule = AppModule = __decorate([
                 inject: [config_1.ConfigService],
                 useFactory: (cfg) => ({
                     uri: cfg.get('MONGODB_URI'),
+                }),
+            }),
+            typeorm_1.TypeOrmModule.forRootAsync({
+                inject: [config_1.ConfigService],
+                useFactory: (cfg) => ({
+                    type: 'mysql',
+                    host: cfg.get('SQL_DB_HOST', 'localhost'),
+                    port: Number(cfg.get('SQL_DB_PORT') ?? 3306),
+                    username: cfg.get('SQL_DB_USER'),
+                    password: cfg.get('SQL_DB_PASS'),
+                    database: cfg.get('SQL_DB_NAME'),
+                    autoLoadEntities: true,
+                    synchronize: false,
                 }),
             }),
             auth_module_1.AuthModule,

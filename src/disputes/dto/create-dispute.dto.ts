@@ -1,40 +1,24 @@
-// src/disputes/dto/create-dispute.dto.ts
-import { IsString, IsNotEmpty, IsOptional, IsArray } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsIn, IsInt, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreateDisputeDto {
-  @ApiProperty({
-    description: 'ID de la orden asociada a la disputa',
-    example: 'ORD-12345',
-    required: false,
-  })
+  @IsOptional()
+  @IsInt()
+  orderId?: number;
+
+  @IsOptional()
+  @IsInt()
+  postId?: number;
+
+  @IsString()
+  @MinLength(3)
+  @MaxLength(255)
+  motivo: string;
+
   @IsOptional()
   @IsString()
-  orderId?: string; // puede ser string, si en tu DTO lo tenías como number cámbialo aquí y abajo en service
+  descripcion?: string;
 
-  @ApiProperty({
-    description: 'Motivo de la disputa',
-    example: 'Producto dañado',
-  })
-  @IsString()
-  @IsNotEmpty()
-  reason: string;
-
-  @ApiProperty({
-    description: 'Descripción detallada',
-    example: 'El producto llegó roto y no enciende.',
-  })
-  @IsString()
-  @IsNotEmpty()
-  description: string;
-
-  @ApiProperty({
-    description: 'Adjuntos opcionales (URLs)',
-    example: ['https://ruta/foto1.jpg'],
-    required: false,
-  })
+  // ejemplo: ["fileKey1","fileKey2"] si usas prefirmadas
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  attachments?: string[];
+  adjuntos?: string[];
 }

@@ -1,17 +1,12 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { DisputesController } from './disputes.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Dispute } from './entities/dispute.entity';
+import { DisputeEvent } from './entities/dispute-event.entity';
 import { DisputesService } from './disputes.service';
-import { Dispute, DisputeSchema } from './schemas/dispute.schema';
-import { DisputeEvent, DisputeEventSchema } from './schemas/dispute-event.schema';
+import { DisputesController } from './disputes.controller';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: Dispute.name, schema: DisputeSchema },
-      { name: DisputeEvent.name, schema: DisputeEventSchema },
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([Dispute, DisputeEvent])],
   controllers: [DisputesController],
   providers: [DisputesService],
   exports: [DisputesService],

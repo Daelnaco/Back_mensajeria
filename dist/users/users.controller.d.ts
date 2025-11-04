@@ -4,9 +4,9 @@ import { UpdateUserDto } from './schemas/dto/update-user.dto';
 export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
-    create(dto: CreateUserDto): Promise<import("./schemas/user.schema").UserDocument>;
+    create(createUserDto: CreateUserDto): Promise<import("./schemas/user.schema").UserDocument>;
     findAll(): Promise<import("./schemas/user.schema").User[]>;
     findOne(id: string): Promise<import("./schemas/user.schema").User>;
-    update(id: string, updateDto: UpdateUserDto): Promise<import("./schemas/user.schema").User>;
+    update(id: string, updateUserDto: UpdateUserDto): Promise<import("./schemas/user.schema").User>;
     remove(id: string): Promise<void>;
 }

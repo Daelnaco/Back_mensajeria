@@ -14,79 +14,67 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessagesController = void 0;
 const common_1 = require("@nestjs/common");
+const common_2 = require("@nestjs/common");
+const common_3 = require("@nestjs/common");
+const common_4 = require("@nestjs/common");
+const common_5 = require("@nestjs/common");
+const common_6 = require("@nestjs/common");
 const messages_service_1 = require("./messages.service");
-const create_message_dto_1 = require("./dto/create-message.dto");
-const get_messages_dto_1 = require("./dto/get-messages.dto");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
-const swagger_1 = require("@nestjs/swagger");
+const roles_guard_1 = require("../common/guards/roles.guard");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 let MessagesController = class MessagesController {
     constructor(messagesService) {
         this.messagesService = messagesService;
     }
-    async sendMessage(orderId, body, req) {
-        const dto = {
-            ...body,
-            orderId,
-        };
-        return this.messagesService.sendMessage(dto, req.user);
+    getFlaggedMessages() {
+        return this.messagesService.findFlagged();
     }
-    async getMessages(orderId, query, req) {
-        return this.messagesService.getMessagesForOrder(orderId, query, req.user);
+    async softDelete(id, req) {
+        return this.messagesService.softDelete(id, req.user);
+    }
+    getByOrder(orderId) {
+        return this.messagesService.findByOrder(orderId);
+    }
+    getByPost(postId) {
+        return this.messagesService.findByPost(postId);
     }
 };
 exports.MessagesController = MessagesController;
 __decorate([
-    (0, common_1.Post)('order/:orderId'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Enviar mensaje en el chat de una orden',
-        description: 'Crea un mensaje (texto o imagen) asociado a una orden específica. ' +
-            'Valida que el usuario pueda hablar de esa orden y deja estado "sent".',
-    }),
-    (0, swagger_1.ApiBody)({ type: create_message_dto_1.CreateMessageDto }),
-    (0, swagger_1.ApiCreatedResponse)({ description: 'Mensaje enviado' }),
-    (0, swagger_1.ApiForbiddenResponse)({
-        description: 'El usuario no tiene permiso sobre esta orden',
-    }),
-    __param(0, (0, common_1.Param)('orderId')),
-    __param(1, (0, common_1.Body)()),
-    __param(2, (0, common_1.Req)()),
+    (0, common_6.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, common_2.Get)('flagged'),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
-    __metadata("design:returntype", Promise)
-], MessagesController.prototype, "sendMessage", null);
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], MessagesController.prototype, "getFlaggedMessages", null);
 __decorate([
-    (0, common_1.Get)('order/:orderId'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Obtener mensajes de la orden (chat)',
-        description: 'Devuelve mensajes cronológicos (ASC) de la orden dada. ' +
-            'Soporta paginación por cursor (fecha) y límite de resultados.',
-    }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Mensajes obtenidos' }),
-    (0, swagger_1.ApiForbiddenResponse)({
-        description: 'El usuario no tiene permiso sobre esta orden',
-    }),
-    (0, swagger_1.ApiQuery)({
-        name: 'cursor',
-        required: false,
-        description: 'ISO date. Entrega solo mensajes creados DESPUÉS de esa fecha.',
-    }),
-    (0, swagger_1.ApiQuery)({
-        name: 'limit',
-        required: false,
-        description: 'Cantidad máxima de mensajes. Default 20.',
-    }),
-    __param(0, (0, common_1.Param)('orderId')),
-    __param(1, (0, common_1.Query)()),
-    __param(2, (0, common_1.Req)()),
+    (0, common_6.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_3.Patch)(':id/delete'),
+    __param(0, (0, common_4.Param)('id')),
+    __param(1, (0, common_5.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, get_messages_dto_1.GetMessagesQueryDto, Object]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
-], MessagesController.prototype, "getMessages", null);
+], MessagesController.prototype, "softDelete", null);
+__decorate([
+    (0, common_6.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_2.Get)('order/:orderId'),
+    __param(0, (0, common_4.Param)('orderId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MessagesController.prototype, "getByOrder", null);
+__decorate([
+    (0, common_6.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_2.Get)('post/:postId'),
+    __param(0, (0, common_4.Param)('postId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], MessagesController.prototype, "getByPost", null);
 exports.MessagesController = MessagesController = __decorate([
-    (0, swagger_1.ApiTags)('Mensajes (HU-03)'),
-    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('messages'),
     __metadata("design:paramtypes", [messages_service_1.MessagesService])
 ], MessagesController);

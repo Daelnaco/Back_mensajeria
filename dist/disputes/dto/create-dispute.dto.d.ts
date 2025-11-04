@@ -1,6 +1,7 @@
 export declare class CreateDisputeDto {
-    orderId?: string;
-    reason: string;
-    description: string;
-    attachments?: string[];
+    orderId?: number;
+    postId?: number;
+    motivo: string;
+    descripcion?: string;
+    adjuntos?: string[];
 }

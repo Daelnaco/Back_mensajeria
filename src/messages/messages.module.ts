@@ -1,16 +1,15 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { MessagesController } from './messages.controller';
 import { MessagesService } from './messages.service';
-import { Message, MessageSchema } from './schemas/message.schema';
+import { MessagesController } from './messages.controller';
+
+import { Chat } from './entities/chat.entity';
+import { Disputa } from './entities/disputa.entity';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([
-      { name: Message.name, schema: MessageSchema },
-    ]),
-  ],
+  // Repositorios TypeORM disponibles para inyección en el servicio
+  imports: [TypeOrmModule.forFeature([Chat, Disputa]),],
   controllers: [MessagesController],
   providers: [MessagesService],
   exports: [MessagesService],

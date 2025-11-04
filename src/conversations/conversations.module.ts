@@ -1,18 +1,12 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { ConversationsController } from './conversations.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Conversation } from './entities/conversation.entity';
+import { ConversationMessage } from './entities/message.entity';
 import { ConversationsService } from './conversations.service';
-import { Conversation, ConversationSchema, } from './schemas/conversation.schema';
-import { Message, MessageSchema } from '../messages/schemas/message.schema';
+import { ConversationsController } from './conversations.controller';
 
 @Module({
-  imports: [
-    // Registramos Conversation y Message para poder usarlos aquí
-    MongooseModule.forFeature([
-      { name: Conversation.name, schema: ConversationSchema },
-      { name: Message.name, schema: MessageSchema },
-    ]),
-  ],
+  imports: [TypeOrmModule.forFeature([Conversation, ConversationMessage])],
   controllers: [ConversationsController],
   providers: [ConversationsService],
   exports: [ConversationsService],

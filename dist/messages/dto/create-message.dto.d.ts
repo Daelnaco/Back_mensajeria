@@ -1,6 +1,8 @@
 export declare class CreateMessageDto {
-    orderId: string;
-    type: 'text' | 'image';
-    body?: string;
-    attachments?: string[];
+    content: string;
+    orderId?: string;
+    postId?: string;
+    isVisible?: boolean;
+    isFlagged?: boolean;
+    isDeleted?: boolean;
 }

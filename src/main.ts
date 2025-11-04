@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'; // 👈 importa Swagger
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -23,21 +22,9 @@ async function bootstrap() {
   
   // Prefijo global para todas las rutas de la API
   app.setGlobalPrefix('api');
-
-  // 🚀 Configuración de Swagger
-  const config = new DocumentBuilder()
-    .setTitle('API de Disputas y Mensajería')
-    .setDescription('Documentación de endpoints del sistema (Disputes, Conversations, Attachments, etc.)')
-    .setVersion('1.0')
-    .addBearerAuth() // Habilita autenticación JWT en Swagger
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document); // 👈 Swagger accesible en /api/docs
   
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`Aplicación ejecutándose en: http://localhost:${port}/api`);
-  console.log(`Swagger disponible en: http://localhost:${port}/api/docs`);
 }
 bootstrap();

@@ -1,6 +1,6 @@
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 export declare class AuthController {
     private readonly authService;
     constructor(authService: AuthService);
@@ -24,5 +24,5 @@ export declare class AuthController {
         };
         access_token: string;
     }>;
-    me(req: any): Promise<import("../users/schemas/user.schema").User>;
+    getProfile(req: any): Promise<import("../users/schemas/user.schema").User>;
 }

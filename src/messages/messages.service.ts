@@ -1,82 +1,101 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, FilterQuery } from 'mongoose';
-import { Message, MessageDocument } from './schemas/message.schema';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Chat } from './entities/chat.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { GetMessagesQueryDto } from './dto/get-messages.dto';
-
-// Aquí deberías validar si el usuario realmente pertenece a la orden (buyer / seller).
-// Eso viene de otro squad. De momento devolvemos true para no bloquear la demo.
-async function canUserAccessOrder(orderId: string, userId: string) {
-  // TODO: integrar con microservicio de órdenes.
-  return true;
-}
 
 @Injectable()
 export class MessagesService {
   constructor(
-    @InjectModel(Message.name)
-    private readonly messageModel: Model<MessageDocument>,
+    @InjectRepository(Chat)
+    private readonly chats: Repository<Chat>,
   ) {}
 
-  // HU-03: Enviar mensaje en el chat de una orden
-  async sendMessage(dto: CreateMessageDto, user: any) {
-    // 1. validar que este usuario puede hablar sobre esta orden
-    const allowed = await canUserAccessOrder(dto.orderId, user.id);
-    if (!allowed) {
-      throw new ForbiddenException(
-        'No puedes enviar mensajes para esta orden',
-      );
+  private forbiddenWords = ['spam', 'insulto', 'grosería'];
+
+  async create(createMessageDto: CreateMessageDto, user: any) {
+    // Moderación
+    let isVisible = true;
+    let isFlagged = false;
+
+    if (this.forbiddenWords.some((w) => (createMessageDto.content ?? '').toLowerCase().includes(w))) {
+      isVisible = false;
+      isFlagged = true;
     }
 
-    // 2. crear el mensaje con estado inicial 'sent'
-    const msg = await this.messageModel.create({
-      orderId: dto.orderId,
-      senderUserId: user.id,
-      type: dto.type,
-      body: dto.body ?? '',
-      attachments: dto.attachments ?? [],
-      status: 'sent',
+    const entity = this.chats.create({
+      
+      contenido: createMessageDto.content,
+      senderId: Number(user.id),                   
+      orderId: createMessageDto.orderId ? Number(createMessageDto.orderId) : null,
+      postId: createMessageDto.postId ? Number(createMessageDto.postId) : null,
+
+      isVisible,
+      isFlagged,
+      isDeleted: false,
+
     });
 
-    // (Opcional) aquí podrías notificar, actualizar "última actividad" de la orden, etc.
-
-    return msg;
+    return this.chats.save(entity);
   }
 
-  // HU-03: Obtener mensajes de la orden con paginación por cursor
-  async getMessagesForOrder(
-    orderId: string,
-    query: GetMessagesQueryDto,
-    user: any,
-  ) {
-    const allowed = await canUserAccessOrder(orderId, user.id);
-    if (!allowed) {
-      throw new ForbiddenException(
-        'No puedes ver los mensajes de esta orden',
-      );
+  async findFlagged() {
+    return this.chats.find({
+      where: { isFlagged: true },
+      order: { createdAt: 'DESC' as const },
+    });
+  }
+
+  async softDelete(id: string, user: any) {
+    const idNum = Number(id);
+    const message = await this.chats.findOne({ where: { idChat: idNum } });
+
+    if (!message) {
+      throw new NotFoundException('Message not found');
     }
 
-    const mongoQuery: FilterQuery<MessageDocument> = {
-      orderId,
-    };
-
-    // Soportar cursor (mensajes posteriores a cierta fecha)
-    if (query.cursor) {
-      const cursorDate = new Date(query.cursor);
-      if (!isNaN(cursorDate.valueOf())) {
-        mongoQuery.createdAt = { $gt: cursorDate };
-      }
+    
+    const isOwner = Number(message.senderId) === Number(user.id);
+    const isAdmin = user?.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('Not allowed');
     }
 
-    // Límite
-    const limit = query.limit ? parseInt(query.limit, 10) : 20;
+    message.isDeleted = true;
+    await this.chats.save(message);
+    return { success: true };
+  }
 
-    const messages = await this.messageModel
-      .find(mongoQuery)
-      .sort({ createdAt: 1 }) // ASC: más antiguo -> más nuevo
-      .limit(limit);
+  async findAll(user: any) {
+    const isAdmin = user?.role === 'admin';
+    if (isAdmin) {
+      return this.chats.find({ order: { createdAt: 'DESC' as const } });
+    }
+    return this.chats.find({
+      where: { isDeleted: false },
+      order: { createdAt: 'DESC' as const },
+    });
+  }
 
-    return messages;
+  async findByOrder(orderId: string) {
+    return this.chats.find({
+      where: {
+        orderId: Number(orderId),
+        isDeleted: false,
+        isVisible: true,
+      },
+      order: { createdAt: 'ASC' as const }, // o fechaMensaje: 'ASC'
+    });
+  }
+
+  async findByPost(postId: string) {
+    return this.chats.find({
+      where: {
+        postId: Number(postId),
+        isDeleted: false,
+        isVisible: true,
+      },
+      order: { createdAt: 'ASC' as const },
+    });
   }
 }

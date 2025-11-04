@@ -11,29 +11,17 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReplyDisputeDto = void 0;
 const class_validator_1 = require("class-validator");
-const swagger_1 = require("@nestjs/swagger");
 class ReplyDisputeDto {
 }
 exports.ReplyDisputeDto = ReplyDisputeDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Mensaje de respuesta del usuario',
-        example: 'Adjunto más evidencia del daño',
-        required: false,
-    }),
-    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(1),
+    (0, class_validator_1.MaxLength)(5000),
     __metadata("design:type", String)
-], ReplyDisputeDto.prototype, "message", void 0);
+], ReplyDisputeDto.prototype, "mensaje", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Adjuntos adicionales (URLs)',
-        example: ['https://ruta/foto-extra.jpg'],
-        required: false,
-    }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
-], ReplyDisputeDto.prototype, "attachments", void 0);
+], ReplyDisputeDto.prototype, "adjuntos", void 0);
 //# sourceMappingURL=reply-dispute.dto.js.map

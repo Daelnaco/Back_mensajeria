@@ -1,7 +1,6 @@
-export declare class ConversationCreateMessageDto {
-    orderId: string;
+export declare class CreateConversationMessageDto {
     type: 'text' | 'image';
     body?: string;
-    attachments?: string[];
-    otherUserId: string;
+    imageUrl?: string;
+    imageCaption?: string;
 }

@@ -6,26 +6,25 @@ export type MessageDocument = Message & Document;
 @Schema({ timestamps: true })
 export class Message {
   @Prop({ required: true })
-  orderId: string;
+  content: string;
 
   @Prop({ required: true })
-  senderUserId: string;
+  userId: string; // ID del usuario que creó el mensaje
 
-  @Prop({ required: true, enum: ['text', 'image'] })
-  type: 'text' | 'image';
+  @Prop({ default: true })
+  isVisible: boolean;
+
+  @Prop({ default: false })
+  isFlagged: boolean;
+
+  @Prop({ default: false })
+  isDeleted: boolean;
 
   @Prop({ required: false })
-  body?: string; // texto del mensaje o caption de la imagen
+  orderId?: string;
 
-  @Prop({ type: [String], default: [] })
-  attachments: string[]; // URLs de archivos/imagenes asociadas
-
-  @Prop({
-    required: true,
-    enum: ['sent', 'delivered', 'read'],
-    default: 'sent',
-  })
-  status: string;
+  @Prop({ required: false })
+  postId?: string;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

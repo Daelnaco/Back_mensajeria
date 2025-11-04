@@ -1,18 +1,16 @@
-import { Model } from 'mongoose';
-import { Message, MessageDocument } from './schemas/message.schema';
+import { Repository } from 'typeorm';
+import { Chat } from './entities/chat.entity';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { GetMessagesQueryDto } from './dto/get-messages.dto';
 export declare class MessagesService {
-    private readonly messageModel;
-    constructor(messageModel: Model<MessageDocument>);
-    sendMessage(dto: CreateMessageDto, user: any): Promise<import("mongoose").Document<unknown, {}, MessageDocument, {}, {}> & Message & import("mongoose").Document<unknown, any, any, Record<string, any>, {}> & Required<{
-        _id: unknown;
-    }> & {
-        __v: number;
+    private readonly chats;
+    constructor(chats: Repository<Chat>);
+    private forbiddenWords;
+    create(createMessageDto: CreateMessageDto, user: any): Promise<Chat>;
+    findFlagged(): Promise<Chat[]>;
+    softDelete(id: string, user: any): Promise<{
+        success: boolean;
     }>;
-    getMessagesForOrder(orderId: string, query: GetMessagesQueryDto, user: any): Promise<(import("mongoose").Document<unknown, {}, MessageDocument, {}, {}> & Message & import("mongoose").Document<unknown, any, any, Record<string, any>, {}> & Required<{
-        _id: unknown;
-    }> & {
-        __v: number;
-    })[]>;
+    findAll(user: any): Promise<Chat[]>;
+    findByOrder(orderId: string): Promise<Chat[]>;
+    findByPost(postId: string): Promise<Chat[]>;
 }

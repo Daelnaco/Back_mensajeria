@@ -8,20 +8,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AttachmentsModule = void 0;
 const common_1 = require("@nestjs/common");
-const mongoose_1 = require("@nestjs/mongoose");
-const attachment_schema_1 = require("./schemas/attachment.schema");
-const attachments_controller_1 = require("./attachments.controller");
+const typeorm_1 = require("@nestjs/typeorm");
+const attachment_entity_1 = require("./entities/attachment.entity");
 const attachments_service_1 = require("./attachments.service");
+const attachments_controller_1 = require("./attachments.controller");
 let AttachmentsModule = class AttachmentsModule {
 };
 exports.AttachmentsModule = AttachmentsModule;
 exports.AttachmentsModule = AttachmentsModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            mongoose_1.MongooseModule.forFeature([
-                { name: attachment_schema_1.Attachment.name, schema: attachment_schema_1.AttachmentSchema },
-            ]),
-        ],
+        imports: [typeorm_1.TypeOrmModule.forFeature([attachment_entity_1.Attachment])],
         controllers: [attachments_controller_1.AttachmentsController],
         providers: [attachments_service_1.AttachmentsService],
         exports: [attachments_service_1.AttachmentsService],

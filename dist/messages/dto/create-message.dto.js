@@ -11,48 +11,22 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateMessageDto = void 0;
 const class_validator_1 = require("class-validator");
-const swagger_1 = require("@nestjs/swagger");
 class CreateMessageDto {
 }
 exports.CreateMessageDto = CreateMessageDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'ID de la orden a la que pertenece el mensaje (chat ligado a esa orden)',
-        example: 'ORD-12345',
-    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
+], CreateMessageDto.prototype, "content", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
 ], CreateMessageDto.prototype, "orderId", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Tipo de mensaje',
-        example: 'text',
-        enum: ['text', 'image'],
-    }),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsIn)(['text', 'image']),
-    __metadata("design:type", String)
-], CreateMessageDto.prototype, "type", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Contenido del mensaje si es de tipo texto, o caption si es imagen',
-        example: 'Hola, necesito ayuda con mi pedido',
-        required: false,
-    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateMessageDto.prototype, "body", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'Adjuntos (URLs de imágenes u otros archivos)',
-        example: ['https://uploads.example.com/evidencia1.jpg'],
-        required: false,
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsString)({ each: true }),
-    __metadata("design:type", Array)
-], CreateMessageDto.prototype, "attachments", void 0);
+], CreateMessageDto.prototype, "postId", void 0);
 //# sourceMappingURL=create-message.dto.js.map

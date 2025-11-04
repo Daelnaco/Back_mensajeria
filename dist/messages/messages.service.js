@@ -14,57 +14,88 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessagesService = void 0;
 const common_1 = require("@nestjs/common");
-const mongoose_1 = require("@nestjs/mongoose");
-const mongoose_2 = require("mongoose");
-const message_schema_1 = require("./schemas/message.schema");
-async function canUserAccessOrder(orderId, userId) {
-    return true;
-}
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const chat_entity_1 = require("./entities/chat.entity");
 let MessagesService = class MessagesService {
-    constructor(messageModel) {
-        this.messageModel = messageModel;
+    constructor(chats) {
+        this.chats = chats;
+        this.forbiddenWords = ['spam', 'insulto', 'grosería'];
     }
-    async sendMessage(dto, user) {
-        const allowed = await canUserAccessOrder(dto.orderId, user.id);
-        if (!allowed) {
-            throw new common_1.ForbiddenException('No puedes enviar mensajes para esta orden');
+    async create(createMessageDto, user) {
+        let isVisible = true;
+        let isFlagged = false;
+        if (this.forbiddenWords.some((w) => (createMessageDto.content ?? '').toLowerCase().includes(w))) {
+            isVisible = false;
+            isFlagged = true;
         }
-        const msg = await this.messageModel.create({
-            orderId: dto.orderId,
-            senderUserId: user.id,
-            type: dto.type,
-            body: dto.body ?? '',
-            attachments: dto.attachments ?? [],
-            status: 'sent',
+        const entity = this.chats.create({
+            contenido: createMessageDto.content,
+            senderId: Number(user.id),
+            orderId: createMessageDto.orderId ? Number(createMessageDto.orderId) : null,
+            postId: createMessageDto.postId ? Number(createMessageDto.postId) : null,
+            isVisible,
+            isFlagged,
+            isDeleted: false,
         });
-        return msg;
+        return this.chats.save(entity);
     }
-    async getMessagesForOrder(orderId, query, user) {
-        const allowed = await canUserAccessOrder(orderId, user.id);
-        if (!allowed) {
-            throw new common_1.ForbiddenException('No puedes ver los mensajes de esta orden');
+    async findFlagged() {
+        return this.chats.find({
+            where: { isFlagged: true },
+            order: { createdAt: 'DESC' },
+        });
+    }
+    async softDelete(id, user) {
+        const idNum = Number(id);
+        const message = await this.chats.findOne({ where: { idChat: idNum } });
+        if (!message) {
+            throw new common_1.NotFoundException('Message not found');
         }
-        const mongoQuery = {
-            orderId,
-        };
-        if (query.cursor) {
-            const cursorDate = new Date(query.cursor);
-            if (!isNaN(cursorDate.valueOf())) {
-                mongoQuery.createdAt = { $gt: cursorDate };
-            }
+        const isOwner = Number(message.senderId) === Number(user.id);
+        const isAdmin = user?.role === 'admin';
+        if (!isOwner && !isAdmin) {
+            throw new common_1.ForbiddenException('Not allowed');
         }
-        const limit = query.limit ? parseInt(query.limit, 10) : 20;
-        const messages = await this.messageModel
-            .find(mongoQuery)
-            .sort({ createdAt: 1 })
-            .limit(limit);
-        return messages;
+        message.isDeleted = true;
+        await this.chats.save(message);
+        return { success: true };
+    }
+    async findAll(user) {
+        const isAdmin = user?.role === 'admin';
+        if (isAdmin) {
+            return this.chats.find({ order: { createdAt: 'DESC' } });
+        }
+        return this.chats.find({
+            where: { isDeleted: false },
+            order: { createdAt: 'DESC' },
+        });
+    }
+    async findByOrder(orderId) {
+        return this.chats.find({
+            where: {
+                orderId: Number(orderId),
+                isDeleted: false,
+                isVisible: true,
+            },
+            order: { createdAt: 'ASC' },
+        });
+    }
+    async findByPost(postId) {
+        return this.chats.find({
+            where: {
+                postId: Number(postId),
+                isDeleted: false,
+                isVisible: true,
+            },
+            order: { createdAt: 'ASC' },
+        });
     }
 };
 exports.MessagesService = MessagesService;
 exports.MessagesService = MessagesService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, mongoose_1.InjectModel)(message_schema_1.Message.name)),
-    __metadata("design:paramtypes", [mongoose_2.Model])
+    __param(0, (0, typeorm_1.InjectRepository)(chat_entity_1.Chat)),
+    __metadata("design:paramtypes", [typeorm_2.Repository])
 ], MessagesService);
 //# sourceMappingURL=messages.service.js.map

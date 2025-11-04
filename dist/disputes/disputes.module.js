@@ -8,22 +8,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DisputesModule = void 0;
 const common_1 = require("@nestjs/common");
-const mongoose_1 = require("@nestjs/mongoose");
-const disputes_controller_1 = require("./disputes.controller");
+const typeorm_1 = require("@nestjs/typeorm");
+const dispute_entity_1 = require("./entities/dispute.entity");
+const dispute_event_entity_1 = require("./entities/dispute-event.entity");
 const disputes_service_1 = require("./disputes.service");
-const dispute_schema_1 = require("./schemas/dispute.schema");
-const dispute_event_schema_1 = require("./schemas/dispute-event.schema");
+const disputes_controller_1 = require("./disputes.controller");
 let DisputesModule = class DisputesModule {
 };
 exports.DisputesModule = DisputesModule;
 exports.DisputesModule = DisputesModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            mongoose_1.MongooseModule.forFeature([
-                { name: dispute_schema_1.Dispute.name, schema: dispute_schema_1.DisputeSchema },
-                { name: dispute_event_schema_1.DisputeEvent.name, schema: dispute_event_schema_1.DisputeEventSchema },
-            ]),
-        ],
+        imports: [typeorm_1.TypeOrmModule.forFeature([dispute_entity_1.Dispute, dispute_event_entity_1.DisputeEvent])],
         controllers: [disputes_controller_1.DisputesController],
         providers: [disputes_service_1.DisputesService],
         exports: [disputes_service_1.DisputesService],

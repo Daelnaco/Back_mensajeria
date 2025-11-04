@@ -1,4 +1,4 @@
 export declare class ReplyDisputeDto {
-    message?: string;
-    attachments?: string[];
+    mensaje: string;
+    adjuntos?: string[];
 }

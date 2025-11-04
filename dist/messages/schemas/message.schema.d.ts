@@ -1,12 +1,13 @@
 import { Document } from 'mongoose';
 export type MessageDocument = Message & Document;
 export declare class Message {
-    orderId: string;
-    senderUserId: string;
-    type: 'text' | 'image';
-    body?: string;
-    attachments: string[];
-    status: string;
+    content: string;
+    userId: string;
+    isVisible: boolean;
+    isFlagged: boolean;
+    isDeleted: boolean;
+    orderId?: string;
+    postId?: string;
 }
 export declare const MessageSchema: import("mongoose").Schema<Message, import("mongoose").Model<Message, any, any, any, Document<unknown, any, Message, any, {}> & Message & {
     _id: import("mongoose").Types.ObjectId;

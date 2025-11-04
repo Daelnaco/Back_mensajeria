@@ -16,72 +16,36 @@ exports.AttachmentsController = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const multer_1 = require("multer");
-const crypto_1 = require("crypto");
+const path = require("node:path");
+const node_crypto_1 = require("node:crypto");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
 const attachments_service_1 = require("./attachments.service");
-const swagger_1 = require("@nestjs/swagger");
 let AttachmentsController = class AttachmentsController {
-    constructor(attachmentsService) {
-        this.attachmentsService = attachmentsService;
+    constructor(svc) {
+        this.svc = svc;
     }
-    async uploadFile(file, req) {
-        return this.attachmentsService.handleUpload(file, req.user);
+    upload(file) {
+        return this.svc.store(file);
     }
 };
 exports.AttachmentsController = AttachmentsController;
 __decorate([
     (0, common_1.Post)('upload'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
         storage: (0, multer_1.diskStorage)({
             destination: './uploads',
-            filename: (req, file, cb) => {
-                const ext = file.originalname.split('.').pop() || 'bin';
-                const unique = (0, crypto_1.randomUUID)();
-                cb(null, `${unique}.${ext}`);
-            },
+            filename: (_, file, cb) => cb(null, `${(0, node_crypto_1.randomUUID)()}${path.extname(file.originalname)}`),
         }),
-        limits: {
-            fileSize: 5 * 1024 * 1024,
-        },
+        limits: { fileSize: 5 * 1024 * 1024 },
     })),
-    (0, swagger_1.ApiOperation)({
-        summary: 'Subir adjunto (imagen) para el chat',
-        description: 'Sube una imagen, valida MIME/tamaño, realiza un "escaneo" simulado, y guarda metadatos en BD.',
-    }),
-    (0, swagger_1.ApiConsumes)('multipart/form-data'),
-    (0, swagger_1.ApiBody)({
-        schema: {
-            type: 'object',
-            required: ['file'],
-            properties: {
-                file: {
-                    type: 'string',
-                    format: 'binary',
-                    description: 'Imagen a adjuntar (jpeg/png/webp)',
-                },
-            },
-        },
-    }),
-    (0, swagger_1.ApiCreatedResponse)({
-        description: 'Archivo subido y registrado',
-    }),
-    (0, swagger_1.ApiBadRequestResponse)({
-        description: 'Archivo inválido (tipo no permitido, tamaño excedido, sin archivo, etc.)',
-    }),
-    (0, swagger_1.ApiForbiddenResponse)({
-        description: 'El usuario no está autorizado a subir archivos',
-    }),
     __param(0, (0, common_1.UploadedFile)()),
-    __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], AttachmentsController.prototype, "uploadFile", null);
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AttachmentsController.prototype, "upload", null);
 exports.AttachmentsController = AttachmentsController = __decorate([
-    (0, swagger_1.ApiTags)('Adjuntos (HU-04)'),
-    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('attachments'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [attachments_service_1.AttachmentsService])
 ], AttachmentsController);
 //# sourceMappingURL=attachments.controller.js.map

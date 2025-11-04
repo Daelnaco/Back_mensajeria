@@ -14,79 +14,65 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConversationsService = void 0;
 const common_1 = require("@nestjs/common");
-const mongoose_1 = require("@nestjs/mongoose");
-const mongoose_2 = require("mongoose");
-const conversation_schema_1 = require("./schemas/conversation.schema");
-const message_schema_1 = require("../messages/schemas/message.schema");
-function userAllowedForOrder(orderId, userId) {
-    return true;
-}
+const typeorm_1 = require("@nestjs/typeorm");
+const typeorm_2 = require("typeorm");
+const conversation_entity_1 = require("./entities/conversation.entity");
+const message_entity_1 = require("./entities/message.entity");
 let ConversationsService = class ConversationsService {
-    constructor(conversationModel, messageModel) {
-        this.conversationModel = conversationModel;
-        this.messageModel = messageModel;
+    constructor(convRepo, msgRepo) {
+        this.convRepo = convRepo;
+        this.msgRepo = msgRepo;
     }
-    async sendMessageInConversation(dto, senderUser) {
-        if (!userAllowedForOrder(dto.orderId, senderUser.id)) {
-            throw new common_1.ForbiddenException('No puedes iniciar conversación sobre esta orden');
+    async assertMembership(conversationId, userId) {
+        const c = await this.convRepo.findOne({ where: { id: conversationId } });
+        if (!c)
+            throw new common_1.NotFoundException('Conversación no existe');
+        if (![c.buyerId, c.sellerId].includes(userId)) {
+            throw new common_1.ForbiddenException('No perteneces a esta conversación');
         }
-        const [userAId, userBId] = senderUser.id < dto.otherUserId
-            ? [senderUser.id, dto.otherUserId]
-            : [dto.otherUserId, senderUser.id];
-        let conversation = await this.conversationModel.findOne({
-            orderId: dto.orderId,
-            userAId,
-            userBId,
-        });
-        const now = new Date();
-        if (!conversation) {
-            conversation = await this.conversationModel.create({
-                orderId: dto.orderId,
-                userAId,
-                userBId,
-                lastActivityAt: now,
-            });
+        return c;
+    }
+    async postMessage(conversationId, dto, user) {
+        const conv = await this.assertMembership(conversationId, Number(user.id));
+        if (!conv.idPedido && !conv.idPublicacion) {
+            throw new common_1.BadRequestException('Conversación debe estar ligada a pedido o publicación');
         }
-        const msg = await this.messageModel.create({
-            orderId: dto.orderId,
-            senderUserId: senderUser.id,
+        if (dto.type === 'text' && !dto.body) {
+            throw new common_1.BadRequestException('Mensaje de texto sin body');
+        }
+        if (dto.type === 'image' && !dto.imageUrl) {
+            throw new common_1.BadRequestException('Mensaje de imagen sin URL');
+        }
+        const entity = this.msgRepo.create({
+            conversation: conv,
+            senderId: Number(user.id),
             type: dto.type,
-            body: dto.body ?? '',
-            attachments: dto.attachments ?? [],
+            body: dto.body,
+            imageUrl: dto.imageUrl,
+            imageCaption: dto.imageCaption,
             status: 'sent',
         });
-        conversation.lastActivityAt = now;
-        await conversation.save();
-        return {
-            conversationId: conversation._id.toString(),
-            message: msg,
-        };
+        const saved = await this.msgRepo.save(entity);
+        await this.convRepo.update({ id: conv.id }, { actualizadoEn: new Date() });
+        return saved;
     }
-    async listMyConversations(userId) {
-        const conversations = await this.conversationModel
-            .find({
-            $or: [{ userAId: userId }, { userBId: userId }],
-        })
-            .sort({ lastActivityAt: -1 });
-        return conversations;
-    }
-    async getConversationByOrder(orderId, userId) {
-        const convo = await this.conversationModel.findOne({
-            orderId,
-            $or: [{ userAId: userId }, { userBId: userId }],
+    async listMessages(conversationId, user, cursor, limit = 20) {
+        await this.assertMembership(conversationId, Number(user.id));
+        const whereBase = { conversation: { id: conversationId } };
+        const where = cursor ? { ...whereBase, creadoEn: (0, typeorm_2.MoreThan)(new Date(cursor)) } : whereBase;
+        return this.msgRepo.find({
+            where,
+            order: { creadoEn: 'ASC' },
+            take: Math.min(limit, 100),
         });
-        if (!convo) {
-            throw new common_1.NotFoundException('Conversación no encontrada');
-        }
-        return convo;
     }
 };
 exports.ConversationsService = ConversationsService;
 exports.ConversationsService = ConversationsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, mongoose_1.InjectModel)(conversation_schema_1.Conversation.name)),
-    __param(1, (0, mongoose_1.InjectModel)(message_schema_1.Message.name)),
-    __metadata("design:paramtypes", [mongoose_2.Model,
-        mongoose_2.Model])
+    __param(0, (0, typeorm_1.InjectRepository)(conversation_entity_1.Conversation)),
+    __param(1, (0, typeorm_1.InjectRepository)(message_entity_1.ConversationMessage)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository])
 ], ConversationsService);
 //# sourceMappingURL=conversations.service.js.map

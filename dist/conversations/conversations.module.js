@@ -8,22 +8,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConversationsModule = void 0;
 const common_1 = require("@nestjs/common");
-const mongoose_1 = require("@nestjs/mongoose");
-const conversations_controller_1 = require("./conversations.controller");
+const typeorm_1 = require("@nestjs/typeorm");
+const conversation_entity_1 = require("./entities/conversation.entity");
+const message_entity_1 = require("./entities/message.entity");
 const conversations_service_1 = require("./conversations.service");
-const conversation_schema_1 = require("./schemas/conversation.schema");
-const message_schema_1 = require("../messages/schemas/message.schema");
+const conversations_controller_1 = require("./conversations.controller");
 let ConversationsModule = class ConversationsModule {
 };
 exports.ConversationsModule = ConversationsModule;
 exports.ConversationsModule = ConversationsModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            mongoose_1.MongooseModule.forFeature([
-                { name: conversation_schema_1.Conversation.name, schema: conversation_schema_1.ConversationSchema },
-                { name: message_schema_1.Message.name, schema: message_schema_1.MessageSchema },
-            ]),
-        ],
+        imports: [typeorm_1.TypeOrmModule.forFeature([conversation_entity_1.Conversation, message_entity_1.ConversationMessage])],
         controllers: [conversations_controller_1.ConversationsController],
         providers: [conversations_service_1.ConversationsService],
         exports: [conversations_service_1.ConversationsService],
