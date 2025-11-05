@@ -9,8 +9,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DisputesModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const dispute_entity_1 = require("./entities/dispute.entity");
-const dispute_event_entity_1 = require("./entities/dispute-event.entity");
 const disputes_service_1 = require("./disputes.service");
 const disputes_controller_1 = require("./disputes.controller");
 let DisputesModule = class DisputesModule {
@@ -18,7 +16,7 @@ let DisputesModule = class DisputesModule {
 exports.DisputesModule = DisputesModule;
 exports.DisputesModule = DisputesModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([dispute_entity_1.Dispute, dispute_event_entity_1.DisputeEvent])],
+        imports: [typeorm_1.TypeOrmModule],
         controllers: [disputes_controller_1.DisputesController],
         providers: [disputes_service_1.DisputesService],
         exports: [disputes_service_1.DisputesService],

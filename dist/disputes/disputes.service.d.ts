@@ -1,17 +1,25 @@
-import { Repository } from 'typeorm';
-import { Dispute } from './entities/dispute.entity';
-import { DisputeEvent } from './entities/dispute-event.entity';
-import { CreateDisputeDto } from './dto/create-dispute.dto';
-import { ReplyDisputeDto } from './dto/reply-dispute.dto';
+import { DataSource } from 'typeorm';
 export declare class DisputesService {
-    private readonly disputes;
-    private readonly events;
-    constructor(disputes: Repository<Dispute>, events: Repository<DisputeEvent>);
-    private validateOwnershipOrThrow;
-    private ensureNotDuplicateOpen;
-    create(dto: CreateDisputeDto, user: any, ip?: string, ua?: string): Promise<Dispute>;
-    private assertCanReplyOrThrow;
-    reply(disputeId: number, dto: ReplyDisputeDto, user: any): Promise<{
+    private readonly ds;
+    constructor(ds: DataSource);
+    open(conversationId: number | null, openerId: number, reason: string, orderId: number | null, description: string | null): Promise<any>;
+    list({ status, scope, uid, }: {
+        status?: string;
+        scope: 'mine' | 'all';
+        uid: number;
+    }): Promise<any>;
+    findById(id: number): Promise<any>;
+    reply(id: number, userId: number, eventType?: string, note?: string, payload?: any): Promise<{
         ok: boolean;
+        id: number;
+        userId: number;
+        eventType: string;
+        note: string;
+        payload: any;
     }>;
+    close(id: number): Promise<{
+        ok: boolean;
+        id: number;
+    }>;
+    events(id: number): Promise<any[]>;
 }

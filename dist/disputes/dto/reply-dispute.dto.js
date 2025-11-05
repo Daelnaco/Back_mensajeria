@@ -10,18 +10,29 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReplyDisputeDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class ReplyDisputeDto {
 }
 exports.ReplyDisputeDto = ReplyDisputeDto;
 __decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(1),
-    (0, class_validator_1.MaxLength)(5000),
+    (0, swagger_1.ApiProperty)({ enum: ['message', 'evidence', 'agreement', 'status_change'] }),
+    (0, class_validator_1.IsEnum)(['message', 'evidence', 'agreement', 'status_change']),
     __metadata("design:type", String)
-], ReplyDisputeDto.prototype, "mensaje", void 0);
+], ReplyDisputeDto.prototype, "eventType", void 0);
 __decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'Adjunto comprobante' }),
     (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Array)
-], ReplyDisputeDto.prototype, "adjuntos", void 0);
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(3),
+    __metadata("design:type", String)
+], ReplyDisputeDto.prototype, "note", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'JSON con metadatos del evento',
+        example: { url: 'https://bucket/archivo.png' }
+    }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], ReplyDisputeDto.prototype, "payload", void 0);
 //# sourceMappingURL=reply-dispute.dto.js.map

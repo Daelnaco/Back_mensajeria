@@ -9,7 +9,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AttachmentsModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const attachment_entity_1 = require("./entities/attachment.entity");
 const attachments_service_1 = require("./attachments.service");
 const attachments_controller_1 = require("./attachments.controller");
 let AttachmentsModule = class AttachmentsModule {
@@ -17,7 +16,7 @@ let AttachmentsModule = class AttachmentsModule {
 exports.AttachmentsModule = AttachmentsModule;
 exports.AttachmentsModule = AttachmentsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([attachment_entity_1.Attachment])],
+        imports: [typeorm_1.TypeOrmModule],
         controllers: [attachments_controller_1.AttachmentsController],
         providers: [attachments_service_1.AttachmentsService],
         exports: [attachments_service_1.AttachmentsService],

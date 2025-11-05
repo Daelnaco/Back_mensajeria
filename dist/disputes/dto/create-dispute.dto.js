@@ -10,33 +10,55 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateDisputeDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
+const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 class CreateDisputeDto {
 }
 exports.CreateDisputeDto = CreateDisputeDto;
 __decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Conversación asociada (opcional)',
+        type: Number,
+        minimum: 1,
+        example: 123,
+    }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
-], CreateDisputeDto.prototype, "orderId", void 0);
+], CreateDisputeDto.prototype, "conversation_id", void 0);
 __decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Orden asociada (opcional)',
+        type: Number,
+        minimum: 1,
+        example: 456,
+    }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
-], CreateDisputeDto.prototype, "postId", void 0);
+], CreateDisputeDto.prototype, "order_id", void 0);
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Motivo de la disputa',
+        example: 'Producto dañado',
+        minLength: 3,
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(3),
-    (0, class_validator_1.MaxLength)(255),
     __metadata("design:type", String)
-], CreateDisputeDto.prototype, "motivo", void 0);
+], CreateDisputeDto.prototype, "reason", void 0);
 __decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Descripción detallada del problema',
+        example: 'Pantalla rota y empaque abollado; solicito reemplazo.',
+    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateDisputeDto.prototype, "descripcion", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Array)
-], CreateDisputeDto.prototype, "adjuntos", void 0);
+], CreateDisputeDto.prototype, "description", void 0);
 //# sourceMappingURL=create-dispute.dto.js.map

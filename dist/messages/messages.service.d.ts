@@ -1,16 +1,21 @@
-import { Repository } from 'typeorm';
-import { Chat } from './entities/chat.entity';
-import { CreateMessageDto } from './dto/create-message.dto';
+import { DataSource } from 'typeorm';
+export type MessageRole = 'buyer' | 'seller' | 'moderator';
 export declare class MessagesService {
-    private readonly chats;
-    constructor(chats: Repository<Chat>);
-    private forbiddenWords;
-    create(createMessageDto: CreateMessageDto, user: any): Promise<Chat>;
-    findFlagged(): Promise<Chat[]>;
-    softDelete(id: string, user: any): Promise<{
-        success: boolean;
+    private readonly ds;
+    constructor(ds: DataSource);
+    send(conversationId: number, senderId: number, role: MessageRole, body: string): Promise<{
+        ok: boolean;
     }>;
-    findAll(user: any): Promise<Chat[]>;
-    findByOrder(orderId: string): Promise<Chat[]>;
-    findByPost(postId: string): Promise<Chat[]>;
+    list(conversationId: number, after?: {
+        ts: string;
+        id: number;
+    }, limit?: number): Promise<any>;
+    softDelete(messageId: number, actorId: number): Promise<{
+        ok: boolean;
+    }>;
+    getOne(messageId: number): Promise<any>;
+    flag(messageId: number, reason: string, actorId: number): Promise<{
+        ok: boolean;
+    }>;
+    listFlagged(limit?: number): Promise<any>;
 }

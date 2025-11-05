@@ -8,49 +8,49 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AttachmentsService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
-const fs = require("node:fs");
-const path = require("node:path");
-const attachment_entity_1 = require("./entities/attachment.entity");
-const ALLOWED = ['image/jpeg', 'image/png', 'image/webp'];
-const MAX_SIZE = 5 * 1024 * 1024;
+const typeorm_1 = require("typeorm");
 let AttachmentsService = class AttachmentsService {
-    constructor(repo) {
-        this.repo = repo;
+    constructor(ds) {
+        this.ds = ds;
     }
-    async antivirusScan(_absPath) {
-        return true;
+    async upload(dto, actorId) {
+        const [msg] = await this.ds.query(`SELECT m.id, m.conversation_id, m.sender_id, m.type,
+              c.buyer_id, c.seller_id
+         FROM message m
+         JOIN conversation c ON c.id = m.conversation_id
+        WHERE m.id = ? AND m.deleted_at IS NULL`, [dto.messageId]);
+        if (!msg)
+            throw new common_1.BadRequestException('Mensaje no existe o fue eliminado');
+        const isParticipant = (msg.buyer_id === actorId) || (msg.seller_id === actorId);
+        if (!isParticipant)
+            throw new common_1.ForbiddenException('No participa en la conversación');
+        await this.ds.query(`INSERT INTO attachment
+         (message_id, mime, size_bytes, storage_key, url_secure, scan_status, checksum, created_at)
+       VALUES (?,?,?,?,?,'pending',?, NOW(3))`, [dto.messageId, dto.mime, dto.sizeBytes, dto.storageKey, dto.urlSecure, dto.checksum]);
+        await this.ds.query(`INSERT INTO audit_log (actor_id, entity, entity_id, action, metadata, created_at)
+       VALUES (?,?,?,?, JSON_OBJECT('mime', ?, 'size', ?), NOW(3))`, [actorId, 'Attachment', dto.messageId, 'create', dto.mime, dto.sizeBytes]);
+        return { ok: true };
     }
-    async store(file) {
-        if (!ALLOWED.includes(file.mimetype))
-            throw new common_1.BadRequestException('Formato no permitido');
-        if (file.size > MAX_SIZE)
-            throw new common_1.BadRequestException('Archivo excede tamaño máximo');
-        const abs = path.resolve(file.path);
-        const ok = await this.antivirusScan(abs);
-        if (!ok) {
-            fs.unlinkSync(abs);
-            throw new common_1.BadRequestException('Fallo de escaneo/antimalware');
+    async secureUrl(id) {
+        const rows = await this.ds.query(`SELECT url_secure
+         FROM attachment
+        WHERE id = ? AND scan_status = 'clean'`, [id]);
+        if (!rows?.length) {
+            throw new common_1.ForbiddenException('Adjunto no disponible (pendiente o bloqueado)');
         }
-        const saved = await this.repo.save(this.repo.create({
-            storagePath: abs,
-            mimeType: file.mimetype,
-            size: file.size,
-        }));
-        return saved;
+        return rows[0];
+    }
+    async setAntivirusStatus(id, status) {
+        await this.ds.query(`UPDATE attachment SET scan_status = ? WHERE id = ?`, [status, id]);
+        return { ok: true };
     }
 };
 exports.AttachmentsService = AttachmentsService;
 exports.AttachmentsService = AttachmentsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(attachment_entity_1.Attachment)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_1.DataSource])
 ], AttachmentsService);
 //# sourceMappingURL=attachments.service.js.map

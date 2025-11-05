@@ -1,11 +1,19 @@
-import { IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class ReplyDisputeDto {
-  @IsString()
-  @MinLength(1)
-  @MaxLength(5000)
-  mensaje: string;
+  @ApiProperty({ enum: ['message','evidence','agreement','status_change'] })
+  @IsEnum(['message','evidence','agreement','status_change'] as any)
+  eventType: 'message'|'evidence'|'agreement'|'status_change';
 
+  @ApiPropertyOptional({ example: 'Adjunto comprobante' })
+  @IsOptional() @IsString() @MinLength(3)
+  note?: string;
+
+  @ApiPropertyOptional({
+    description: 'JSON con metadatos del evento',
+    example: { url: 'https://bucket/archivo.png' }
+  })
   @IsOptional()
-  adjuntos?: string[];
+  payload?: any;
 }

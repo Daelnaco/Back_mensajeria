@@ -10,23 +10,20 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateMessageDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class CreateMessageDto {
 }
 exports.CreateMessageDto = CreateMessageDto;
 __decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, swagger_1.ApiProperty)({ enum: ['buyer', 'seller', 'moderator'] }),
+    (0, class_validator_1.IsEnum)(['buyer', 'seller', 'moderator']),
     __metadata("design:type", String)
-], CreateMessageDto.prototype, "content", void 0);
+], CreateMessageDto.prototype, "role", void 0);
 __decorate([
-    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiProperty)({ example: 'Hola, ¿llegó el pedido?' }),
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(1),
     __metadata("design:type", String)
-], CreateMessageDto.prototype, "orderId", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateMessageDto.prototype, "postId", void 0);
+], CreateMessageDto.prototype, "body", void 0);
 //# sourceMappingURL=create-message.dto.js.map

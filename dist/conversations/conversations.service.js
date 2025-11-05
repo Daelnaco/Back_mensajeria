@@ -8,71 +8,49 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConversationsService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
-const conversation_entity_1 = require("./entities/conversation.entity");
-const message_entity_1 = require("./entities/message.entity");
+const typeorm_1 = require("typeorm");
 let ConversationsService = class ConversationsService {
-    constructor(convRepo, msgRepo) {
-        this.convRepo = convRepo;
-        this.msgRepo = msgRepo;
+    constructor(ds) {
+        this.ds = ds;
     }
-    async assertMembership(conversationId, userId) {
-        const c = await this.convRepo.findOne({ where: { id: conversationId } });
-        if (!c)
-            throw new common_1.NotFoundException('Conversación no existe');
-        if (![c.buyerId, c.sellerId].includes(userId)) {
-            throw new common_1.ForbiddenException('No perteneces a esta conversación');
-        }
-        return c;
+    async create(buyerId, sellerId) {
+        const sql = `
+      INSERT INTO conversation (buyer_id, seller_id, last_activity_at)
+      VALUES (?, ?, NOW(3))
+    `;
+        const res = await this.ds.query(sql, [buyerId, sellerId]);
+        return { id: res.insertId, buyerId, sellerId };
     }
-    async postMessage(conversationId, dto, user) {
-        const conv = await this.assertMembership(conversationId, Number(user.id));
-        if (!conv.idPedido && !conv.idPublicacion) {
-            throw new common_1.BadRequestException('Conversación debe estar ligada a pedido o publicación');
-        }
-        if (dto.type === 'text' && !dto.body) {
-            throw new common_1.BadRequestException('Mensaje de texto sin body');
-        }
-        if (dto.type === 'image' && !dto.imageUrl) {
-            throw new common_1.BadRequestException('Mensaje de imagen sin URL');
-        }
-        const entity = this.msgRepo.create({
-            conversation: conv,
-            senderId: Number(user.id),
-            type: dto.type,
-            body: dto.body,
-            imageUrl: dto.imageUrl,
-            imageCaption: dto.imageCaption,
-            status: 'sent',
-        });
-        const saved = await this.msgRepo.save(entity);
-        await this.convRepo.update({ id: conv.id }, { actualizadoEn: new Date() });
-        return saved;
+    async listByUser(userId) {
+        const sql = `
+      SELECT c.id, c.buyer_id, c.seller_id, c.last_activity_at,
+             u.nombre_usuario AS other_party
+        FROM conversation c
+        JOIN perfiles u
+          ON u.id_usuario = IF(c.buyer_id = ?, c.seller_id, c.buyer_id)
+       WHERE c.buyer_id = ? OR c.seller_id = ?
+       ORDER BY c.last_activity_at DESC
+    `;
+        return this.ds.query(sql, [userId, userId, userId]);
     }
-    async listMessages(conversationId, user, cursor, limit = 20) {
-        await this.assertMembership(conversationId, Number(user.id));
-        const whereBase = { conversation: { id: conversationId } };
-        const where = cursor ? { ...whereBase, creadoEn: (0, typeorm_2.MoreThan)(new Date(cursor)) } : whereBase;
-        return this.msgRepo.find({
-            where,
-            order: { creadoEn: 'ASC' },
-            take: Math.min(limit, 100),
-        });
+    async findById(id) {
+        const sql = `
+      SELECT c.*, pb.nombre_usuario AS buyer_name, ps.nombre_usuario AS seller_name
+      FROM conversation c
+      LEFT JOIN perfiles pb ON pb.id_usuario = c.buyer_id
+      LEFT JOIN perfiles ps ON ps.id_usuario = c.seller_id
+      WHERE c.id = ?
+    `;
+        const rows = await this.ds.query(sql, [id]);
+        return rows[0] ?? null;
     }
 };
 exports.ConversationsService = ConversationsService;
 exports.ConversationsService = ConversationsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(conversation_entity_1.Conversation)),
-    __param(1, (0, typeorm_1.InjectRepository)(message_entity_1.ConversationMessage)),
-    __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_1.DataSource])
 ], ConversationsService);
 //# sourceMappingURL=conversations.service.js.map

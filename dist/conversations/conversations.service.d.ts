@@ -1,12 +1,12 @@
-import { Repository } from 'typeorm';
-import { Conversation } from './entities/conversation.entity';
-import { ConversationMessage } from './entities/message.entity';
-import { CreateConversationMessageDto } from './dto/create-message.dto';
+import { DataSource } from 'typeorm';
 export declare class ConversationsService {
-    private readonly convRepo;
-    private readonly msgRepo;
-    constructor(convRepo: Repository<Conversation>, msgRepo: Repository<ConversationMessage>);
-    private assertMembership;
-    postMessage(conversationId: number, dto: CreateConversationMessageDto, user: any): Promise<ConversationMessage>;
-    listMessages(conversationId: number, user: any, cursor?: string, limit?: number): Promise<ConversationMessage[]>;
+    private readonly ds;
+    constructor(ds: DataSource);
+    create(buyerId: number, sellerId: number): Promise<{
+        id: any;
+        buyerId: number;
+        sellerId: number;
+    }>;
+    listByUser(userId: number): Promise<any>;
+    findById(id: number): Promise<any>;
 }

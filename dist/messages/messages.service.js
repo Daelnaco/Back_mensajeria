@@ -8,94 +8,77 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessagesService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
-const chat_entity_1 = require("./entities/chat.entity");
+const typeorm_1 = require("typeorm");
 let MessagesService = class MessagesService {
-    constructor(chats) {
-        this.chats = chats;
-        this.forbiddenWords = ['spam', 'insulto', 'grosería'];
+    constructor(ds) {
+        this.ds = ds;
     }
-    async create(createMessageDto, user) {
-        let isVisible = true;
-        let isFlagged = false;
-        if (this.forbiddenWords.some((w) => (createMessageDto.content ?? '').toLowerCase().includes(w))) {
-            isVisible = false;
-            isFlagged = true;
+    async send(conversationId, senderId, role, body) {
+        await this.ds.query(`CALL sp_send_message(?,?,?,?,?)`, [
+            conversationId,
+            senderId,
+            role,
+            'text',
+            body,
+        ]);
+        return { ok: true };
+    }
+    async list(conversationId, after, limit = 50) {
+        const params = [conversationId];
+        let sql = `SELECT id, sender_id, sender_role, type, body, created_at
+                 FROM message
+                WHERE conversation_id = ?
+                  AND deleted_at IS NULL`;
+        if (after?.ts && after?.id) {
+            sql += ` AND (created_at > ? OR (created_at = ? AND id > ?))`;
+            params.push(after.ts, after.ts, after.id);
         }
-        const entity = this.chats.create({
-            contenido: createMessageDto.content,
-            senderId: Number(user.id),
-            orderId: createMessageDto.orderId ? Number(createMessageDto.orderId) : null,
-            postId: createMessageDto.postId ? Number(createMessageDto.postId) : null,
-            isVisible,
-            isFlagged,
-            isDeleted: false,
-        });
-        return this.chats.save(entity);
+        sql += ` ORDER BY created_at ASC, id ASC LIMIT ?`;
+        params.push(limit);
+        return this.ds.query(sql, params);
     }
-    async findFlagged() {
-        return this.chats.find({
-            where: { isFlagged: true },
-            order: { createdAt: 'DESC' },
-        });
+    async softDelete(messageId, actorId) {
+        await this.ds.query(`UPDATE message
+          SET deleted_at = NOW(3)
+        WHERE id = ?
+          AND deleted_at IS NULL`, [messageId]);
+        await this.ds.query(`INSERT INTO audit_log (actor_id, entity, entity_id, action, created_at)
+       VALUES (?,?,?,?, NOW(3))`, [actorId, 'Message', messageId, 'delete']);
+        return { ok: true };
     }
-    async softDelete(id, user) {
-        const idNum = Number(id);
-        const message = await this.chats.findOne({ where: { idChat: idNum } });
-        if (!message) {
-            throw new common_1.NotFoundException('Message not found');
-        }
-        const isOwner = Number(message.senderId) === Number(user.id);
-        const isAdmin = user?.role === 'admin';
-        if (!isOwner && !isAdmin) {
-            throw new common_1.ForbiddenException('Not allowed');
-        }
-        message.isDeleted = true;
-        await this.chats.save(message);
-        return { success: true };
+    async getOne(messageId) {
+        const rows = await this.ds.query(`SELECT id, conversation_id, sender_id, sender_role, type, body, created_at, deleted_at
+         FROM message
+        WHERE id = ?`, [messageId]);
+        return rows?.[0] ?? null;
     }
-    async findAll(user) {
-        const isAdmin = user?.role === 'admin';
-        if (isAdmin) {
-            return this.chats.find({ order: { createdAt: 'DESC' } });
-        }
-        return this.chats.find({
-            where: { isDeleted: false },
-            order: { createdAt: 'DESC' },
-        });
+    async flag(messageId, reason, actorId) {
+        await this.ds.query(`INSERT INTO audit_log (actor_id, entity, entity_id, action, metadata, created_at)
+       VALUES (?,?,?,?, JSON_OBJECT('reason', ?), NOW(3))`, [actorId, 'Message', messageId, 'flag', reason ?? '']);
+        return { ok: true };
     }
-    async findByOrder(orderId) {
-        return this.chats.find({
-            where: {
-                orderId: Number(orderId),
-                isDeleted: false,
-                isVisible: true,
-            },
-            order: { createdAt: 'ASC' },
-        });
-    }
-    async findByPost(postId) {
-        return this.chats.find({
-            where: {
-                postId: Number(postId),
-                isDeleted: false,
-                isVisible: true,
-            },
-            order: { createdAt: 'ASC' },
-        });
+    async listFlagged(limit = 100) {
+        return this.ds.query(`SELECT al.id       AS flag_id,
+              m.id        AS message_id,
+              m.conversation_id,
+              m.sender_id,
+              m.body,
+              JSON_EXTRACT(al.metadata, '$.reason') AS reason,
+              al.created_at
+         FROM audit_log al
+         JOIN message   m ON m.id = al.entity_id
+        WHERE al.entity = 'Message'
+          AND al.action = 'flag'
+        ORDER BY al.created_at DESC
+        LIMIT ?`, [limit]);
     }
 };
 exports.MessagesService = MessagesService;
 exports.MessagesService = MessagesService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(chat_entity_1.Chat)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_1.DataSource])
 ], MessagesService);
 //# sourceMappingURL=messages.service.js.map

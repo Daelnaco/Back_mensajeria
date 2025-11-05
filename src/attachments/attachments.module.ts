@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Attachment } from './entities/attachment.entity';
 import { AttachmentsService } from './attachments.service';
 import { AttachmentsController } from './attachments.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Attachment])],
+  imports: [TypeOrmModule],         // solo para exponer DataSource
   controllers: [AttachmentsController],
   providers: [AttachmentsService],
   exports: [AttachmentsService],

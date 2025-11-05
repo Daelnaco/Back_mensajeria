@@ -8,110 +8,123 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DisputesService = void 0;
 const common_1 = require("@nestjs/common");
-const typeorm_1 = require("@nestjs/typeorm");
-const typeorm_2 = require("typeorm");
-const dispute_entity_1 = require("./entities/dispute.entity");
-const dispute_event_entity_1 = require("./entities/dispute-event.entity");
+const typeorm_1 = require("typeorm");
 let DisputesService = class DisputesService {
-    constructor(disputes, events) {
-        this.disputes = disputes;
-        this.events = events;
+    constructor(ds) {
+        this.ds = ds;
     }
-    async validateOwnershipOrThrow(userId, dto) {
-        const esDueñoPedido = !!dto.orderId;
-        const esDueñoPublicacion = !!dto.postId;
-        if (!esDueñoPedido && !esDueñoPublicacion) {
-            throw new common_1.ForbiddenException('El recurso no pertenece al usuario');
+    async open(conversationId, openerId, reason, orderId, description) {
+        try {
+            const insertSql = `
+        INSERT INTO dispute
+          (conversation_id, order_id, opener_id, reason, descripcion, status, opened_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, 'open', NOW(), NOW())
+      `;
+            const params = [conversationId, orderId, openerId, reason, description];
+            const result = await this.ds.query(insertSql, params);
+            const id = result?.insertId;
+            const [row] = await this.ds.query(`
+        SELECT
+          d.id,
+          d.status,
+          d.reason,
+          d.descripcion,
+          d.conversation_id  AS conversationId,
+          d.order_id         AS orderId,
+          d.opener_id        AS openerId,
+          d.opened_at        AS createdAt,
+          d.updated_at       AS updatedAt,
+          c.buyer_id         AS buyerId,
+          c.seller_id        AS sellerId
+        FROM dispute d
+        LEFT JOIN conversation c ON c.id = d.conversation_id
+        WHERE d.id = ?
+        `, [id]);
+            return row;
         }
-        return { idComprador: userId, idVendedor: 999 };
-    }
-    async ensureNotDuplicateOpen(dto, _idComprador) {
-        const dup = await this.disputes.findOne({
-            where: [
-                dto.orderId
-                    ? { idPedido: dto.orderId, estado: 'ABIERTO' }
-                    : { idPedido: (0, typeorm_2.Not)(0) },
-                dto.postId
-                    ? { idPublicacion: dto.postId, estado: 'ABIERTO' }
-                    : { idPublicacion: (0, typeorm_2.Not)(0) },
-            ],
-        });
-        if (dup) {
-            throw new common_1.BadRequestException('Ya existe una disputa abierta para este recurso');
-        }
-    }
-    async create(dto, user, ip, ua) {
-        const { idComprador, idVendedor } = await this.validateOwnershipOrThrow(Number(user.id), dto);
-        await this.ensureNotDuplicateOpen(dto, idComprador);
-        const entity = this.disputes.create({
-            idPedido: dto.orderId,
-            idPublicacion: dto.postId,
-            idComprador,
-            idVendedor,
-            motivo: dto.motivo,
-            descripcion: dto.descripcion,
-            estado: 'ABIERTO',
-            ipOrigen: ip,
-            userAgent: ua,
-        });
-        const saved = await this.disputes.save(entity);
-        const evt = this.events.create({
-            disputa: saved,
-            actorId: Number(user.id),
-            actorRol: user.role,
-            tipo: 'CREATED',
-            payload: dto.adjuntos
-                ? JSON.stringify({ adjuntos: dto.adjuntos })
-                : undefined,
-        });
-        await this.events.save(evt);
-        return saved;
-    }
-    async assertCanReplyOrThrow(d, user) {
-        if (!d)
-            throw new common_1.NotFoundException('Disputa no encontrada');
-        if (!['ABIERTO', 'EN_REVISION'].includes(d.estado)) {
-            throw new common_1.BadRequestException('La disputa no admite respuestas en este estado');
-        }
-        const uid = Number(user.id);
-        const isMember = [d.idComprador, d.idVendedor].includes(uid);
-        const isAdmin = user?.role === 'admin';
-        if (!isMember && !isAdmin) {
-            throw new common_1.ForbiddenException('No perteneces a esta disputa');
+        catch (e) {
+            console.error('[DisputesService.open] SQL error:', e?.sqlMessage || e?.message, { code: e?.code });
+            throw new common_1.InternalServerErrorException('Error al crear disputa');
         }
     }
-    async reply(disputeId, dto, user) {
-        const d = await this.disputes.findOne({
-            where: { idDisputa: disputeId },
-        });
-        await this.assertCanReplyOrThrow(d, user);
-        const evt = this.events.create({
-            disputa: d,
-            actorId: Number(user.id),
-            actorRol: user.role,
-            tipo: 'REPLIED',
-            payload: JSON.stringify({
-                mensaje: dto.mensaje,
-                adjuntos: dto.adjuntos ?? [],
-            }),
-        });
-        await this.events.save(evt);
-        await this.disputes.update({ idDisputa: disputeId }, { actualizadoEn: new Date() });
-        return { ok: true };
+    async list({ status, scope, uid, }) {
+        try {
+            const args = [];
+            let sql = `
+        SELECT
+          d.id,
+          d.status,
+          d.reason,
+          d.descripcion,
+          d.conversation_id  AS conversationId,
+          d.order_id         AS orderId,
+          d.opener_id        AS openerId,
+          d.opened_at        AS createdAt,
+          d.updated_at       AS updatedAt,
+          c.buyer_id         AS buyerId,
+          c.seller_id        AS sellerId
+        FROM dispute d
+        LEFT JOIN conversation c ON c.id = d.conversation_id
+        WHERE d.deleted_at IS NULL
+      `;
+            if (scope !== 'all') {
+                sql += ' AND (c.buyer_id = ? OR c.seller_id = ? OR d.opener_id = ?)';
+                args.push(uid, uid, uid);
+            }
+            if (status) {
+                sql += ' AND d.status = ?';
+                args.push(status);
+            }
+            sql += ' ORDER BY d.updated_at DESC LIMIT 100';
+            return await this.ds.query(sql, args);
+        }
+        catch (e) {
+            console.error('[DisputesService.list] SQL error:', e?.sqlMessage || e?.message, { code: e?.code });
+            throw new common_1.InternalServerErrorException('Error al listar disputas');
+        }
+    }
+    async findById(id) {
+        try {
+            const [row] = await this.ds.query(`
+        SELECT
+          d.id,
+          d.status,
+          d.reason,
+          d.descripcion,
+          d.conversation_id  AS conversationId,
+          d.order_id         AS orderId,
+          d.opener_id        AS openerId,
+          d.opened_at        AS createdAt,
+          d.updated_at       AS updatedAt,
+          c.buyer_id         AS buyerId,
+          c.seller_id        AS sellerId
+        FROM dispute d
+        LEFT JOIN conversation c ON c.id = d.conversation_id
+        WHERE d.id = ?
+        `, [id]);
+            return row;
+        }
+        catch (e) {
+            console.error('[DisputesService.findById] SQL error:', e?.sqlMessage || e?.message, { code: e?.code });
+            throw new common_1.InternalServerErrorException('Error al obtener disputa');
+        }
+    }
+    async reply(id, userId, eventType, note, payload) {
+        return { ok: true, id, userId, eventType, note, payload };
+    }
+    async close(id) {
+        return { ok: true, id };
+    }
+    async events(id) {
+        return [];
     }
 };
 exports.DisputesService = DisputesService;
 exports.DisputesService = DisputesService = __decorate([
     (0, common_1.Injectable)(),
-    __param(0, (0, typeorm_1.InjectRepository)(dispute_entity_1.Dispute)),
-    __param(1, (0, typeorm_1.InjectRepository)(dispute_event_entity_1.DisputeEvent)),
-    __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_1.DataSource])
 ], DisputesService);
 //# sourceMappingURL=disputes.service.js.map

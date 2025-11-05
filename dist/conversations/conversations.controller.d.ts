@@ -1,8 +1,13 @@
 import { ConversationsService } from './conversations.service';
-import { CreateConversationMessageDto } from './dto/create-message.dto';
+import { CreateConversationDto } from './dto/create-conversation.dto';
 export declare class ConversationsController {
     private readonly svc;
     constructor(svc: ConversationsService);
-    postMessage(id: string, dto: CreateConversationMessageDto): Promise<import("./entities/message.entity").ConversationMessage>;
-    list(id: string, cursor?: string, limit?: string): Promise<import("./entities/message.entity").ConversationMessage[]>;
+    create(req: any, dto: CreateConversationDto): Promise<{
+        id: any;
+        buyerId: number;
+        sellerId: number;
+    }>;
+    list(req: any): Promise<any>;
+    find(id: string): Promise<any>;
 }

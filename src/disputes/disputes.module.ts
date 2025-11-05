@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Dispute } from './entities/dispute.entity';
-import { DisputeEvent } from './entities/dispute-event.entity';
 import { DisputesService } from './disputes.service';
 import { DisputesController } from './disputes.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Dispute, DisputeEvent])],
+  imports: [TypeOrmModule], // solo para exponer DataSource
   controllers: [DisputesController],
   providers: [DisputesService],
   exports: [DisputesService],

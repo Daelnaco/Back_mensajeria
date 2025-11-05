@@ -1,4 +1,5 @@
 export declare class ReplyDisputeDto {
-    mensaje: string;
-    adjuntos?: string[];
+    eventType: 'message' | 'evidence' | 'agreement' | 'status_change';
+    note?: string;
+    payload?: any;
 }

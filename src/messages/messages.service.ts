@@ -1,101 +1,120 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Chat } from './entities/chat.entity';
-import { CreateMessageDto } from './dto/create-message.dto';
+import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+
+export type MessageRole = 'buyer' | 'seller' | 'moderator';
 
 @Injectable()
 export class MessagesService {
-  constructor(
-    @InjectRepository(Chat)
-    private readonly chats: Repository<Chat>,
-  ) {}
+  constructor(private readonly ds: DataSource) {}
 
-  private forbiddenWords = ['spam', 'insulto', 'grosería'];
+  /**
+   * HU3 — Enviar mensaje a una conversación
+   * Usa el SP definido en el script SQL (crea el mensaje y actualiza last_activity_at).
+   */
+  async send(
+    conversationId: number,
+    senderId: number,
+    role: MessageRole,
+    body: string,
+  ) {
+    await this.ds.query(`CALL sp_send_message(?,?,?,?,?)`, [
+      conversationId,
+      senderId,
+      role,
+      'text',
+      body,
+    ]);
+    return { ok: true };
+  }
 
-  async create(createMessageDto: CreateMessageDto, user: any) {
-    // Moderación
-    let isVisible = true;
-    let isFlagged = false;
-
-    if (this.forbiddenWords.some((w) => (createMessageDto.content ?? '').toLowerCase().includes(w))) {
-      isVisible = false;
-      isFlagged = true;
+  /**
+   * Timeline paginado por cursor (created_at, id).
+   * Si pasas after.ts y after.id, continúa desde ese cursor.
+   */
+  async list(
+    conversationId: number,
+    after?: { ts: string; id: number },
+    limit = 50,
+  ) {
+    const params: any[] = [conversationId];
+    let sql = `SELECT id, sender_id, sender_role, type, body, created_at
+                 FROM message
+                WHERE conversation_id = ?
+                  AND deleted_at IS NULL`;
+    if (after?.ts && after?.id) {
+      sql += ` AND (created_at > ? OR (created_at = ? AND id > ?))`;
+      params.push(after.ts, after.ts, after.id);
     }
-
-    const entity = this.chats.create({
-      
-      contenido: createMessageDto.content,
-      senderId: Number(user.id),                   
-      orderId: createMessageDto.orderId ? Number(createMessageDto.orderId) : null,
-      postId: createMessageDto.postId ? Number(createMessageDto.postId) : null,
-
-      isVisible,
-      isFlagged,
-      isDeleted: false,
-
-    });
-
-    return this.chats.save(entity);
+    sql += ` ORDER BY created_at ASC, id ASC LIMIT ?`;
+    params.push(limit);
+    return this.ds.query(sql, params);
   }
 
-  async findFlagged() {
-    return this.chats.find({
-      where: { isFlagged: true },
-      order: { createdAt: 'DESC' as const },
-    });
+  /**
+   * HU9 — Eliminación lógica de un mensaje.
+   * Deja trazabilidad en audit_log.
+   */
+  async softDelete(messageId: number, actorId: number) {
+    await this.ds.query(
+      `UPDATE message
+          SET deleted_at = NOW(3)
+        WHERE id = ?
+          AND deleted_at IS NULL`,
+      [messageId],
+    );
+
+    // Trazabilidad (compatible con tu esquema de auditoría)
+    await this.ds.query(
+      `INSERT INTO audit_log (actor_id, entity, entity_id, action, created_at)
+       VALUES (?,?,?,?, NOW(3))`,
+      [actorId, 'Message', messageId, 'delete'],
+    );
+
+    return { ok: true };
   }
 
-  async softDelete(id: string, user: any) {
-    const idNum = Number(id);
-    const message = await this.chats.findOne({ where: { idChat: idNum } });
-
-    if (!message) {
-      throw new NotFoundException('Message not found');
-    }
-
-    
-    const isOwner = Number(message.senderId) === Number(user.id);
-    const isAdmin = user?.role === 'admin';
-    if (!isOwner && !isAdmin) {
-      throw new ForbiddenException('Not allowed');
-    }
-
-    message.isDeleted = true;
-    await this.chats.save(message);
-    return { success: true };
+  /**
+   * Utilidad opcional: obtener un mensaje por id (vigente, no borrado).
+   */
+  async getOne(messageId: number) {
+    const rows = await this.ds.query(
+      `SELECT id, conversation_id, sender_id, sender_role, type, body, created_at, deleted_at
+         FROM message
+        WHERE id = ?`,
+      [messageId],
+    );
+    return rows?.[0] ?? null;
   }
 
-  async findAll(user: any) {
-    const isAdmin = user?.role === 'admin';
-    if (isAdmin) {
-      return this.chats.find({ order: { createdAt: 'DESC' as const } });
-    }
-    return this.chats.find({
-      where: { isDeleted: false },
-      order: { createdAt: 'DESC' as const },
-    });
+  /** HU8 — Marcar un mensaje para moderación (razón libre) */
+  async flag(messageId: number, reason: string, actorId: number) {
+    await this.ds.query(
+      `INSERT INTO audit_log (actor_id, entity, entity_id, action, metadata, created_at)
+       VALUES (?,?,?,?, JSON_OBJECT('reason', ?), NOW(3))`,
+      [actorId, 'Message', messageId, 'flag', reason ?? ''],
+    );
+    return { ok: true };
   }
 
-  async findByOrder(orderId: string) {
-    return this.chats.find({
-      where: {
-        orderId: Number(orderId),
-        isDeleted: false,
-        isVisible: true,
-      },
-      order: { createdAt: 'ASC' as const }, // o fechaMensaje: 'ASC'
-    });
+  /** HU8 — Listado de mensajes marcados a partir de audit_log */
+  async listFlagged(limit = 100) {
+    return this.ds.query(
+      `SELECT al.id       AS flag_id,
+              m.id        AS message_id,
+              m.conversation_id,
+              m.sender_id,
+              m.body,
+              JSON_EXTRACT(al.metadata, '$.reason') AS reason,
+              al.created_at
+         FROM audit_log al
+         JOIN message   m ON m.id = al.entity_id
+        WHERE al.entity = 'Message'
+          AND al.action = 'flag'
+        ORDER BY al.created_at DESC
+        LIMIT ?`,
+      [limit],
+    );
   }
 
-  async findByPost(postId: string) {
-    return this.chats.find({
-      where: {
-        postId: Number(postId),
-        isDeleted: false,
-        isVisible: true,
-      },
-      order: { createdAt: 'ASC' as const },
-    });
-  }
 }
+

@@ -1,65 +1,44 @@
-import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
-import { Conversation } from './entities/conversation.entity';
-import { ConversationMessage } from './entities/message.entity';
-import { CreateConversationMessageDto } from './dto/create-message.dto';
+import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class ConversationsService {
-  constructor(
-    @InjectRepository(Conversation) private readonly convRepo: Repository<Conversation>,
-    @InjectRepository(ConversationMessage) private readonly msgRepo: Repository<ConversationMessage>,
-  ) {}
+  constructor(private readonly ds: DataSource) {}
 
-  private async assertMembership(conversationId: number, userId: number) {
-    const c = await this.convRepo.findOne({ where: { id: conversationId } });
-    if (!c) throw new NotFoundException('Conversación no existe');
-    if (![c.buyerId, c.sellerId].includes(userId)) {
-      throw new ForbiddenException('No perteneces a esta conversación');
-    }
-    return c;
+  // Crear una conversación
+  async create(buyerId: number, sellerId: number) {
+    const sql = `
+      INSERT INTO conversation (buyer_id, seller_id, last_activity_at)
+      VALUES (?, ?, NOW(3))
+    `;
+    const res: any = await this.ds.query(sql, [buyerId, sellerId]);
+    return { id: res.insertId, buyerId, sellerId };
   }
 
-  async postMessage(conversationId: number, dto: CreateConversationMessageDto, user: any) {
-    const conv = await this.assertMembership(conversationId, Number(user.id));
-    if (!conv.idPedido && !conv.idPublicacion) {
-      throw new BadRequestException('Conversación debe estar ligada a pedido o publicación');
-    }
-    if (dto.type === 'text' && !dto.body) {
-      throw new BadRequestException('Mensaje de texto sin body');
-    }
-    if (dto.type === 'image' && !dto.imageUrl) {
-      throw new BadRequestException('Mensaje de imagen sin URL');
-    }
-
-    const entity = this.msgRepo.create({
-      conversation: conv,
-      senderId: Number(user.id),
-      type: dto.type,
-      body: dto.body,
-      imageUrl: dto.imageUrl,
-      imageCaption: dto.imageCaption,
-      status: 'sent',
-    });
-    const saved = await this.msgRepo.save(entity);
-
-    await this.convRepo.update({ id: conv.id }, { actualizadoEn: new Date() });
-
-    return saved;
+  // Listar conversaciones (inbox)
+  async listByUser(userId: number) {
+    const sql = `
+      SELECT c.id, c.buyer_id, c.seller_id, c.last_activity_at,
+             u.nombre_usuario AS other_party
+        FROM conversation c
+        JOIN perfiles u
+          ON u.id_usuario = IF(c.buyer_id = ?, c.seller_id, c.buyer_id)
+       WHERE c.buyer_id = ? OR c.seller_id = ?
+       ORDER BY c.last_activity_at DESC
+    `;
+    return this.ds.query(sql, [userId, userId, userId]);
   }
 
-  // paginación con cursor: cursor=ISODate; devuelve mensajes > cursor en orden creciente
-  async listMessages(conversationId: number, user: any, cursor?: string, limit = 20) {
-    await this.assertMembership(conversationId, Number(user.id));
-    const whereBase = { conversation: { id: conversationId } } as any;
-
-    const where = cursor ? { ...whereBase, creadoEn: MoreThan(new Date(cursor)) } : whereBase;
-
-    return this.msgRepo.find({
-      where,
-      order: { creadoEn: 'ASC' },
-      take: Math.min(limit, 100),
-    });
+  // Obtener una conversación específica
+  async findById(id: number) {
+    const sql = `
+      SELECT c.*, pb.nombre_usuario AS buyer_name, ps.nombre_usuario AS seller_name
+      FROM conversation c
+      LEFT JOIN perfiles pb ON pb.id_usuario = c.buyer_id
+      LEFT JOIN perfiles ps ON ps.id_usuario = c.seller_id
+      WHERE c.id = ?
+    `;
+    const rows = await this.ds.query(sql, [id]);
+    return rows[0] ?? null;
   }
 }

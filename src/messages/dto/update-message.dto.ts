@@ -1,4 +1,11 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateMessageDto } from './create-message.dto';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, MinLength } from 'class-validator';
 
-export class UpdateMessageDto extends PartialType(CreateMessageDto) {}
+// Reutilizamos para acciones sencillas (flag, edit opcional a futuro)
+export class UpdateMessageDto {
+  @ApiPropertyOptional({ example: 'lenguaje inapropiado' })
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  reason?: string;
+}

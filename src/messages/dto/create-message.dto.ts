@@ -1,19 +1,13 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsString, MinLength } from 'class-validator';
 
 export class CreateMessageDto {
-  @IsString()
-  @IsNotEmpty()
-  content: string;
+  @ApiProperty({ enum: ['buyer', 'seller', 'moderator'] })
+  @IsEnum(['buyer', 'seller', 'moderator'] as any)
+  role: 'buyer' | 'seller' | 'moderator';
 
-  @IsOptional()
+  @ApiProperty({ example: 'Hola, ¿llegó el pedido?' })
   @IsString()
-  orderId?: string;
-
-  @IsOptional()
-  @IsString()
-  postId?: string;
-
-  isVisible?: boolean;
-  isFlagged?: boolean;
-  isDeleted?: boolean;
+  @MinLength(1)
+  body: string;
 }
