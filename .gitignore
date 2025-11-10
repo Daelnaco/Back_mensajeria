@@ -393,11 +393,20 @@ Temporary Items
 .apdisk
 
 =======
-# Local
-#.env #Debes agregar tu archivo .env con tus variables de entorno en tu proyecto
-dist
+# Local / environment
+# Ignorar archivos de entorno y build locales
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+build/
 .webpack
 .serverless/**/*.zip
+
+# Lockfiles (opcional, depende de si quieres trackearlos en el repo raíz)
 package-lock.json
 yarn.lock
 pnpm-lock.yaml

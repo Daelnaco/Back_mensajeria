@@ -29,8 +29,9 @@ export class AuthService {
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) return null;
 
-    const { password: _, ...result } = user.toObject ? user.toObject() : user;
-    return result;
+  const plain = user && (typeof (user as any).toObject === 'function' ? (user as any).toObject() : user);
+  const { password: _, ...result } = plain || {};
+  return result;
   }
 
   async login(loginDto: LoginDto) {
@@ -51,8 +52,8 @@ export class AuthService {
       password: registerDto.password,
     };
 
-    const newUser = await this.usersService.create(createUserDto);
-    const user = newUser.toObject ? newUser.toObject() : newUser;
+  const newUser = await this.usersService.create(createUserDto);
+  const user = newUser && (typeof (newUser as any).toObject === 'function' ? (newUser as any).toObject() : newUser);
     const payload = this.buildPayload(user);
 
     return {

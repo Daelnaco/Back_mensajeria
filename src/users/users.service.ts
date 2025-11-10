@@ -10,24 +10,29 @@ import { UpdateUserDto } from './schemas/dto/update-user.dto';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async create(createUserDto: CreateUserDto): Promise<UserDocument> {
+  async create(createUserDto: CreateUserDto): Promise<User> {
     // 1) Verificar si el email ya existe
     const existingUser = await this.userModel.findOne({ email: createUserDto.email }).lean();
     if (existingUser) {
       throw new ConflictException('El correo electrónico ya está registrado');
     }
 
-    // Hashear la contraseña
+    // 2) Hashear la contraseña
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
 
-    // Crear el nuevo usuario
+    // 3) Crear y guardar el usuario
     const newUser = new this.userModel({
       ...createUserDto,
       password: hashedPassword,
     });
 
-    return newUser.save();
+    const saved = await newUser.save();
+
+    // 4) Devolver user sin password
+    const obj = saved.toObject();
+    delete obj.password;
+    return obj as User;
   }
 
   async findAll(): Promise<User[]> {
@@ -39,10 +44,10 @@ export class UsersService {
     if (!user) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
-    return user;
+    return user as unknown as User;
   }
 
-  async findByEmail(email: string): Promise<UserDocument> {
+  async findByEmail(email: string): Promise<UserDocument | null> {
     return this.userModel.findOne({ email }).select('+password').exec();
   }
 
@@ -62,7 +67,7 @@ export class UsersService {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
 
-    return updatedUser;
+    return updatedUser as unknown as User;
   }
 
   async remove(id: string): Promise<void> {

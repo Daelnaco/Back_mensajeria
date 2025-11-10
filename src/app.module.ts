@@ -19,10 +19,13 @@ import { AttachmentsModule } from './attachments/attachments.module';
     ConfigModule.forRoot({ isGlobal: true }),
 
     // Conexión a MongoDB
+    // Conexión a MongoDB (usa MONGODB_URI desde .env)
     MongooseModule.forRootAsync({
-      useFactory: async () => ({
-        uri: process.env.MONGO_URI || 'mongodb://gpi-mongo:27017/gpi_database',
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('MONGODB_URI') || 'mongodb://localhost:27017/mensajeria_disputas',
       }),
+      inject: [ConfigService],
     }),
 
     // Conexión a MySQL
