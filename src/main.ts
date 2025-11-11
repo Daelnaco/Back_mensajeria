@@ -35,22 +35,23 @@ async function bootstrap() {
 
   // Servir archivos estáticos del frontend si existe la carpeta build
   // Asume que el build del frontend está en ../../Front_mensajeria/build
-  const frontendBuildPath = join(__dirname, '..', '..', 'Front_mensajeria', 'build');
-
-  try {
-    // app.useStaticAssets es proporcionado por NestExpressApplication
-    app.useStaticAssets(frontendBuildPath);
-
-    // Fallback: cualquier ruta que no empiece por /api servirá index.html (SPA)
-    const server = app.getHttpAdapter().getInstance(); // Express instance
-    server.use((req, res, next) => {
-      if (req.path.startsWith('/api')) return next();
-      res.sendFile(join(frontendBuildPath, 'index.html'));
-    });
-  } catch (err) {
-    // Si no existe la carpeta build o no se puede servir, seguimos igual (no fatal)
-    console.warn('No se pudo configurar el servicio estático del frontend:', err?.message || err);
-  }
+  // DESHABILITADO PARA DESARROLLO: el frontend se ejecuta en su propio servidor
+  // const frontendBuildPath = join(__dirname, '..', '..', 'Front_mensajeria', 'build');
+  //
+  // try {
+  //   // app.useStaticAssets es proporcionado por NestExpressApplication
+  //   app.useStaticAssets(frontendBuildPath);
+  //
+  //   // Fallback: cualquier ruta que no empiece por /api servirá index.html (SPA)
+  //   const server = app.getHttpAdapter().getInstance(); // Express instance
+  //   server.use((req, res, next) => {
+  //     if (req.path.startsWith('/api')) return next();
+  //     res.sendFile(join(frontendBuildPath, 'index.html'));
+  //   });
+  // } catch (err) {
+  //   // Si no existe la carpeta build o no se puede servir, seguimos igual (no fatal)
+  //   console.warn('No se pudo configurar el servicio estático del frontend:', err?.message || err);
+  // }
   
   //Config de swagger
   //const config = new DocumentBuilder()
