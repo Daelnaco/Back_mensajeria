@@ -39,3 +39,5 @@
 ** Iniciar el  Front  **  Puerto 9001  **
     npm run dev
 
+*** Swagger ***
+    En la URL http://localhost:9000/api/docs

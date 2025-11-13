@@ -46,7 +46,7 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     const createUserDto: CreateUserDto = {
-      name: registerDto.name,
+      name: registerDto.firstName || (registerDto as any).name,
       lastName: registerDto.lastName,
       email: registerDto.email,
       password: registerDto.password,

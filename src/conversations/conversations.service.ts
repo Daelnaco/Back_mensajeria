@@ -62,4 +62,37 @@ export class ConversationsService {
       take: Math.min(limit, 100),
     });
   }
+
+  async createConversation(buyerId: number, sellerId: number, idPedido?: number, idPublicacion?: number) {
+    if (!idPedido && !idPublicacion) {
+      throw new BadRequestException('Debe proporcionar idPedido o idPublicacion');
+    }
+    if (buyerId === sellerId) {
+      throw new BadRequestException('No puedes crear una conversación contigo mismo');
+    }
+
+    // Verificar si ya existe
+    const existing = await this.convRepo.findOne({
+      where: [
+        { buyerId, sellerId, idPedido },
+        { buyerId, sellerId, idPublicacion },
+        { buyerId: sellerId, sellerId: buyerId, idPedido },
+        { buyerId: sellerId, sellerId: buyerId, idPublicacion },
+      ],
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    const newConv = this.convRepo.create({
+      buyerId,
+      sellerId,
+      idPedido,
+      idPublicacion,
+      actualizadoEn: new Date(),
+    });
+
+    return this.convRepo.save(newConv);
+  }
 }
